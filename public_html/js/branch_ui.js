@@ -21,22 +21,23 @@
    ============================================================ */
 function viewBranches(c) {
     activeCustomer = c;
-
-    /* ეკრანის გადართვა */
     document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
     document.getElementById('branch-view').classList.add('active');
 
-    /* კლიენტის ინფო ბარათის შევსება */
+    // "← მომხმარებლები" ღილაკის დამატება თუ არ არსებობს
+    if (!document.getElementById('back-to-customers-btn')) {
+        const backBtn = document.createElement('button');
+        backBtn.id = 'back-to-customers-btn';
+        backBtn.onclick = showCustomers;
+        backBtn.className = 'text-blue-600 font-black mb-6 hover:underline flex items-center gap-2 group text-xs uppercase tracking-widest';
+        backBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:-translate-x-1 transition"><polyline points="15 18 9 12 15 6"/></svg> მომხმარებლები';
+        document.getElementById('branch-view').prepend(backBtn);
+    }
+
     fillCustomerCard(c);
-
-    /* KPI-ების ჩატვირთვა Supabase-იდან */
     loadCustomerKPIs();
-
-    /* პირველი ტაბი — მთავარი */
     switchBranchTab('overview', document.getElementById('tab-overview'));
 }
-
-
 /* ============================================================
    fillCustomerCard(c)
    კლიენტის ინფო ბარათის ყველა ველის შევსება.
@@ -315,11 +316,13 @@ async function loadOverviewTab() {
 
     const svcEl = document.getElementById('overview-recent-services');
     if (recentSvc && recentSvc.length > 0) {
-        svcEl.innerHTML = recentSvc.map(s => `
-            <div class="flex items-center gap-3 py-2 border-b border-slate-50 last:border-0">
+       svcEl.innerHTML = recentSvc.map(s => `
+            <div class="flex items-center gap-3 py-2 border-b border-slate-50 last:border-0 cursor-pointer hover:bg-slate-50 rounded-lg px-1 transition"
+                 onclick='switchBranchTab("services", document.getElementById("tab-services"))'>
                 <span class="text-slate-300">${new Date(s.service_date).toLocaleDateString('ka-GE', {day:'2-digit', month:'short'})}</span>
                 <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${s.service_type === 'Emergency' ? 'bg-red-100 text-red-700' : s.service_type === 'PPM' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}">${s.service_type}</span>
                 <span class="text-slate-600 flex-1">${s.technician_name || '—'}</span>
+                <span class="text-blue-400 text-[10px]">→</span>
             </div>
         `).join('');
     } else {
@@ -329,16 +332,27 @@ async function loadOverviewTab() {
     /* ფილიალების მოკლე სია */
     const branchListEl = document.getElementById('overview-branches-list');
     if (branches && branches.length > 0) {
-        branchListEl.innerHTML = branches.map(b => `
-            <div class="flex items-center gap-2 py-2 border-b border-slate-50 last:border-0">
+       branchListEl.innerHTML = branches.map(b => `
+            <div class="flex items-center gap-2 py-2 border-b border-slate-50 last:border-0 cursor-pointer hover:bg-slate-50 rounded-lg px-1 transition"
+                 onclick='viewBranchDashboard(${JSON.stringify(b).replace(/'/g, "&#39;")})'>
                 <div class="w-2 h-2 rounded-full flex-shrink-0 ${b.is_active ? 'bg-green-400' : 'bg-slate-300'}"></div>
                 <div class="flex-1">
                     <div class="text-slate-800 font-medium">${b.name}</div>
                     <div class="text-[10px] text-slate-400">${b.address || '—'}</div>
                 </div>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${b.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'}">${b.is_active ? 'Active' : 'Inactive'}</span>
+                <span class="text-blue-400 text-[10px]">→</span>
             </div>
         `).join('');
+```
+
+---
+
+### პრობლემა 2 — Branch Dashboard-ზე "უკან" ღილაკი
+
+ეს `branch_dashboard.js`-შია. მომეცი ამ ფაილის raw ლინკი და გავასწორებ — ან უკვე გაქვს:
+```
+https://raw.githubusercontent.com/1lashaqareli-boop/becool.com.ge/refs/heads/main/public_html/js/branch_dashboard.js
     } else {
         branchListEl.innerHTML = '<div class="text-xs text-slate-300 text-center py-4 italic">ფილიალები არ არის</div>';
     }
