@@ -1,13 +1,15 @@
 /* ============================================================
-   BECOOL CRM — branch_dashboard.js v2
+   BECOOL CRM — branch_dashboard.js v2 (განახლებული)
+   viewBranchDashboard → _doViewBranchDashboard
+   (wrapper branch_ui.js-შია — breadcrumb-ის განახლებისთვის)
    ============================================================ */
 
 const OPENWEATHER_KEY = 'a155a131748709196243b52b5bf35b53';
 let bdcMap = null;
 let bdcOpen = true;
 
-/* ── viewBranchDashboard ── */
-function viewBranchDashboard(b) {
+/* ── _doViewBranchDashboard ── (ძველი viewBranchDashboard) */
+function _doViewBranchDashboard(b) {
     activeBranch = b;
     document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
     document.getElementById('branch-dashboard-view').classList.add('active');
@@ -22,8 +24,8 @@ function viewBranchDashboard(b) {
 /* ── backToBranches ── */
 function backToBranches() {
     if (bdcMap) { bdcMap.remove(); bdcMap = null; }
-    document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-    document.getElementById('branch-view').classList.add('active');
+    /* branch_ui.js-ის backToCustomer-ს ვიყენებ */
+    backToCustomer();
 }
 
 /* ── toggleBdcDetails ── */
@@ -41,7 +43,6 @@ function toggleBdcDetails() {
 
 /* ── fillBdcHeader ── */
 function fillBdcHeader(b) {
-    /* avatar */
     const av = document.getElementById('bdc-avatar');
     if (b.image_url) {
         av.innerHTML = `<img src="${b.image_url}" class="w-full h-full object-cover">`;
@@ -51,18 +52,14 @@ function fillBdcHeader(b) {
     }
     document.getElementById('bdc-name').textContent = b.name || '---';
 
-    /* სტატუსი */
     const stEl = document.getElementById('bdc-status');
-    const stMap = { Active:'bg-green-100 text-green-800', Inactive:'bg-red-100 text-red-700', Potential:'bg-amber-100 text-amber-800' };
     stEl.textContent = b.is_active ? 'Active' : 'Inactive';
     stEl.className = `text-[10px] font-bold px-2 py-0.5 rounded-full ${b.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`;
 
-    /* building type */
     const btEl = document.getElementById('bdc-btype');
     if (b.building_type) { btEl.textContent = b.building_type; btEl.classList.remove('hidden'); }
     else btEl.classList.add('hidden');
 
-    /* priority */
     const prEl = document.getElementById('bdc-priority');
     const prMap = { Critical:'bg-red-100 text-red-700', High:'bg-amber-100 text-amber-700', Standard:'bg-green-100 text-green-700', Low:'bg-slate-100 text-slate-500' };
     if (b.service_priority) {
@@ -71,13 +68,11 @@ function fillBdcHeader(b) {
         prEl.classList.remove('hidden');
     } else prEl.classList.add('hidden');
 
-    /* meta */
     document.getElementById('bdc-addr').textContent  = b.address || '—';
     document.getElementById('bdc-phone').textContent = b.contact_phone || b.emergency_phone || '—';
     document.getElementById('bdc-sla').textContent   = b.sla_response_hours ? b.sla_response_hours + 'h' : '—';
     document.getElementById('bdc-freq').textContent  = b.service_frequency || '—';
 
-    /* ხელშეკრულების გაფრთხილება */
     const warnEl = document.getElementById('bdc-contract-warn');
     if (b.contract_end) {
         const days = Math.ceil((new Date(b.contract_end) - new Date()) / 86400000);
@@ -113,17 +108,13 @@ async function loadBdcKPIs() {
 /* ── loadBdcWeather ── */
 async function loadBdcWeather() {
     const lat = activeBranch.lat, lng = activeBranch.lng;
-    const strip = document.getElementById('bdc-weather-strip');
 
-    /* strip */
     const loadEl = document.getElementById('bdc-w-loading');
     const dataEl = document.getElementById('bdc-w-data');
     const errEl  = document.getElementById('bdc-w-error');
-
-    /* widget */
-    const wLoad = document.getElementById('bdc-w-widget-loading');
-    const wData = document.getElementById('bdc-w-widget');
-    const wErr  = document.getElementById('bdc-w-widget-err');
+    const wLoad  = document.getElementById('bdc-w-widget-loading');
+    const wData  = document.getElementById('bdc-w-widget');
+    const wErr   = document.getElementById('bdc-w-widget-err');
 
     if (!lat || !lng) {
         loadEl?.classList.add('hidden'); errEl?.classList.remove('hidden');
@@ -144,7 +135,6 @@ async function loadBdcWeather() {
         const aqi   = hum < 50 ? 'კარგი' : hum < 70 ? 'საშ.' : 'ცუდი';
         const aqiColor = hum < 50 ? '#15803d' : hum < 70 ? '#b45309' : '#dc2626';
 
-        /* strip */
         loadEl?.classList.add('hidden'); dataEl?.classList.remove('hidden');
         document.getElementById('bdc-w-temp').textContent  = temp+'°C';
         document.getElementById('bdc-w-hum').textContent   = hum+'%';
@@ -154,7 +144,6 @@ async function loadBdcWeather() {
         document.getElementById('bdc-w-feels').textContent = feels+'°C';
         document.getElementById('bdc-w-vis').textContent   = vis;
 
-        /* widget */
         wLoad?.classList.add('hidden'); wData?.classList.remove('hidden');
         document.getElementById('bdc-w-widget-temp').textContent = temp;
         document.getElementById('bdc-w-widget-desc').textContent = desc;
@@ -162,7 +151,6 @@ async function loadBdcWeather() {
         document.getElementById('bdc-w2-hum').textContent  = hum+'%';
         document.getElementById('bdc-w2-wind').textContent = wind+' m/s';
 
-        /* weather tab full */
         const wfEl = document.getElementById('bdc-weather-full');
         if (wfEl) wfEl.innerHTML = `
             <div class="flex items-center gap-4 mb-5">
@@ -185,19 +173,15 @@ async function loadBdcWeather() {
 
 /* ── switchBdcTab ── */
 function switchBdcTab(name, btn) {
-    /* ყველა ტაბი გასუფთავება */
     document.querySelectorAll('#bdc-nav .bdc-tab').forEach(t => {
         t.classList.remove('border-blue-600','text-blue-600','font-bold');
         t.classList.add('border-transparent','text-slate-400','font-medium');
     });
-    /* არჩეული ტაბი */
     if (btn && btn.classList) {
         btn.classList.add('border-blue-600','text-blue-600','font-bold');
         btn.classList.remove('border-transparent','text-slate-400','font-medium');
     }
-    /* ყველა პანელი დამალვა */
     document.querySelectorAll('.bdc-panel').forEach(p => p.classList.add('hidden'));
-    /* შესაბამისი პანელი გახსნა */
     const panel = document.getElementById('bdcp-'+name);
     if (panel) panel.classList.remove('hidden');
 
@@ -206,6 +190,7 @@ function switchBdcTab(name, btn) {
     if (name==='ac')      loadBdcAssetsFull('AC','bdc-ac-full');
     if (name==='service') loadBdcServices();
     if (name==='stats')   loadBdcStats();
+    if (name==='weather') loadBdcWeather();
 }
 
 /* ── loadBdcRecentServices ── */
@@ -259,26 +244,16 @@ function renderBdcAssetMini(id, assets) {
         </div>`).join('');
 }
 
-/* ── loadBdcAssetsFull (ცალკე ტაბი) ── */
+/* ── loadBdcAssetsFull ── */
 async function loadBdcAssetsFull(category, containerId) {
     const el = document.getElementById(containerId);
     el.innerHTML = '<div class="text-xs text-slate-300 italic text-center py-6">იტვირთება...</div>';
-    
-    const { data, error } = await _supabase
-        .from('assets')
-        .select('*')
-        .eq('branch_id', activeBranch.id)
-        .order('name');
 
-    if (error) {
-        el.innerHTML = '<div class="text-xs text-red-500 italic text-center py-10">შეცდომა ჩატვირთვისას</div>';
-        return;
-    }
+    const { data, error } = await _supabase.from('assets').select('*')
+        .eq('branch_id', activeBranch.id).order('name');
 
-    if (!data || !data.length) {
-        el.innerHTML = '<div class="text-xs text-slate-300 italic text-center py-10">ჩანაწერები არ არის</div>';
-        return;
-    }
+    if (error) { el.innerHTML = '<div class="text-xs text-red-500 italic text-center py-10">შეცდომა</div>'; return; }
+    if (!data || !data.length) { el.innerHTML = '<div class="text-xs text-slate-300 italic text-center py-10">ჩანაწერები არ არის</div>'; return; }
 
     el.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 pb-20">` + data.map(a => `
         <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden group hover:-translate-y-2 transition-all">
@@ -288,13 +263,9 @@ async function loadBdcAssetsFull(category, containerId) {
                     : `<div class="w-full h-full flex items-center justify-center text-slate-700 font-black italic">NO IMAGE</div>`
                 }
                 <div class="absolute top-4 left-4">
-                    <span class="status-badge ${a.status === 'Operational' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}">
-                        ${a.status}
-                    </span>
+                    <span class="status-badge ${a.status === 'Operational' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}">${a.status}</span>
                 </div>
-                <div class="absolute bottom-4 right-4 bg-white/10 backdrop-blur px-4 py-2 rounded-full text-[9px] font-black text-white uppercase tracking-widest italic">
-                    ${a.asset_type}
-                </div>
+                <div class="absolute bottom-4 right-4 bg-white/10 backdrop-blur px-4 py-2 rounded-full text-[9px] font-black text-white uppercase tracking-widest italic">${a.asset_type}</div>
             </div>
             <div class="p-8">
                 <div class="flex justify-between items-start mb-4">
@@ -302,9 +273,7 @@ async function loadBdcAssetsFull(category, containerId) {
                         <h4 class="text-2xl font-black text-slate-900 tracking-tighter italic uppercase">${a.name}</h4>
                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${a.brand} ${a.model || ''}</p>
                     </div>
-                    <div class="text-right">
-                        <span class="text-[10px] font-black text-blue-600 block uppercase">TAG: ${a.tag_number || '---'}</span>
-                    </div>
+                    <span class="text-[10px] font-black text-blue-600 block uppercase">TAG: ${a.tag_number || '---'}</span>
                 </div>
                 <div class="grid grid-cols-2 gap-y-3 mb-6 border-t border-slate-50 pt-6 text-[11px] font-bold">
                     <div class="text-slate-400">სიმძლავრე: <span class="text-slate-900 italic">${a.cooling_capacity_kw || 0} kW</span></div>
@@ -317,9 +286,7 @@ async function loadBdcAssetsFull(category, containerId) {
                         სერვისის ისტორია <i data-lucide="history" class="w-4 h-4"></i>
                     </button>
                     <div class="flex gap-2">
-                        <button onclick='openAssetModal(${JSON.stringify(a)})' class="flex-1 bg-slate-900 text-white py-4 rounded-2xl text-[9px] font-black uppercase hover:bg-blue-600 transition">
-                            რედაქტირება
-                        </button>
+                        <button onclick='openAssetModal(${JSON.stringify(a)})' class="flex-1 bg-slate-900 text-white py-4 rounded-2xl text-[9px] font-black uppercase hover:bg-blue-600 transition">რედაქტირება</button>
                         <button onclick='deleteData("assets", "${a.id}")' class="px-4 text-slate-300 hover:text-red-500 transition">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
