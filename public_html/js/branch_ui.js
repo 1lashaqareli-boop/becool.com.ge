@@ -1,49 +1,168 @@
 /* ============================================================
-   BECOOL CRM — branch_ui.js
-   კლიენტის დეტალების გვერდის სრული ლოგიკა:
-   - კლიენტის ინფო ბარათი (KPI, დეტალები)
-   - ტაბების გადართვა
-   - ფილიალების სია
-   - ყველა აგრეგატის ცხრილი
-   - ყველა სერვისის ცხრილი
-   - Overview (რუკა + ბოლო სერვისები + ფილიალები)
-
-   index.html-ში <script> ტეგებში დაამატე:
-   <script src="js/branch_ui.js"></script>
-   api.js-ის შემდეგ, ui.js-ის წინ.
+   BECOOL CRM — branch_ui.js (განახლებული)
+   ✅ Breadcrumb ნავიგაცია
+   ✅ Overview სერვისების კლიკი
+   ✅ Overview ფილიალების კლიკი
+   ✅ ფილიალის dashboard-ზე breadcrumb
    ============================================================ */
 
 
 /* ============================================================
+   _breadcrumb — ნავიგაციის სტეიტი
+   ============================================================ */
+window._nav = {
+    customer: null,  // activeCustomer snapshot
+    branch:   null,  // activeBranch snapshot
+};
+
+
+/* ============================================================
+   _renderBreadcrumb()
+   navbar-ის შემდეგ breadcrumb ზოლის ჩვენება/განახლება
+   ============================================================ */
+function _renderBreadcrumb() {
+    let el = document.getElementById('_breadcrumb');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = '_breadcrumb';
+        el.style.cssText = `
+            position: sticky; top: 64px; z-index: 40;
+            background: rgba(15,23,42,0.97);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 0 1.5rem;
+        `;
+        const nav = document.querySelector('nav');
+        if (nav && nav.nextSibling) {
+            nav.parentNode.insertBefore(el, nav.nextSibling);
+        }
+    }
+
+    const crumbs = [];
+
+    // მომხმარებლები — ყოველთვის
+    crumbs.push(`
+        <button onclick="showCustomers()"
+            class="flex items-center gap-1.5 text-slate-400 hover:text-white transition font-medium text-xs">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            მომხმარებლები
+        </button>
+    `);
+
+    if (window._nav.customer) {
+        crumbs.push(`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>`);
+
+        if (window._nav.branch) {
+            // კლიკაბელური — კლიენტის სახელი
+            crumbs.push(`
+                <button onclick="backToCustomer()"
+                    class="flex items-center gap-1.5 text-slate-400 hover:text-white transition font-medium text-xs truncate max-w-[160px]">
+                    ${window._nav.customer.image_url
+                        ? `<img src="${window._nav.customer.image_url}" class="w-4 h-4 rounded object-cover flex-shrink-0">`
+                        : `<div class="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-[8px] font-black text-white flex-shrink-0">${(window._nav.customer.name||'BC').substring(0,2).toUpperCase()}</div>`
+                    }
+                    <span class="truncate">${window._nav.customer.name || '---'}</span>
+                </button>
+            `);
+            crumbs.push(`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>`);
+            // მიმდინარე — ფილიალი
+            crumbs.push(`
+                <span class="flex items-center gap-1.5 text-white font-bold text-xs truncate max-w-[180px]">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span class="truncate">${window._nav.branch.name || '---'}</span>
+                </span>
+            `);
+        } else {
+            // მიმდინარე — კლიენტი
+            crumbs.push(`
+                <span class="flex items-center gap-1.5 text-white font-bold text-xs truncate max-w-[200px]">
+                    ${window._nav.customer.image_url
+                        ? `<img src="${window._nav.customer.image_url}" class="w-4 h-4 rounded object-cover flex-shrink-0">`
+                        : `<div class="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-[8px] font-black text-white flex-shrink-0">${(window._nav.customer.name||'BC').substring(0,2).toUpperCase()}</div>`
+                    }
+                    <span class="truncate">${window._nav.customer.name || '---'}</span>
+                </span>
+            `);
+        }
+    }
+
+    el.innerHTML = `
+        <div class="container mx-auto flex items-center gap-2 h-9 overflow-x-auto" style="scrollbar-width:none;">
+            ${crumbs.join('')}
+        </div>
+    `;
+}
+
+
+/* ============================================================
+   _hideBreadcrumb()
+   breadcrumb-ის დამალვა (მომხმარებლების მთავარ გვერდზე)
+   ============================================================ */
+function _hideBreadcrumb() {
+    const el = document.getElementById('_breadcrumb');
+    if (el) el.style.display = 'none';
+    window._nav.customer = null;
+    window._nav.branch   = null;
+}
+
+function _showBreadcrumb() {
+    const el = document.getElementById('_breadcrumb');
+    if (el) el.style.display = '';
+}
+
+
+/* ============================================================
+   backToCustomer()
+   ფილიალის dashboard-იდან კლიენტის გვერდზე დაბრუნება
+   ============================================================ */
+function backToCustomer() {
+    if (!window._nav.customer) { showCustomers(); return; }
+    window._nav.branch = null;
+    activeCustomer = window._nav.customer;
+    document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('branch-view').classList.add('active');
+    fillCustomerCard(activeCustomer);
+    loadCustomerKPIs();
+    switchBranchTab('overview', document.getElementById('tab-overview'));
+    _renderBreadcrumb();
+}
+
+
+/* ============================================================
+   showCustomers() — override: breadcrumb გასუფთავება
+   ============================================================ */
+function showCustomers() {
+    document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('customer-view').classList.add('active');
+    _hideBreadcrumb();
+    loadCustomers();
+}
+
+
+/* ============================================================
    viewBranches(c)
-   კლიენტის ბარათზე "ფილიალები" ღილაკის დაჭერისას.
-   c = კლიენტის ობიექტი
    ============================================================ */
 function viewBranches(c) {
     activeCustomer = c;
+    window._nav.customer = c;
+    window._nav.branch   = null;
 
-    /* ეკრანის გადართვა */
     document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
     document.getElementById('branch-view').classList.add('active');
 
-    /* კლიენტის ინფო ბარათის შევსება */
     fillCustomerCard(c);
-
-    /* KPI-ების ჩატვირთვა Supabase-იდან */
     loadCustomerKPIs();
-
-    /* პირველი ტაბი — მთავარი */
     switchBranchTab('overview', document.getElementById('tab-overview'));
+
+    _showBreadcrumb();
+    _renderBreadcrumb();
 }
 
 
 /* ============================================================
    fillCustomerCard(c)
-   კლიენტის ინფო ბარათის ყველა ველის შევსება.
    ============================================================ */
 function fillCustomerCard(c) {
-
-    /* ავატარი — ლოგო ან ინიციალები */
     const avatarEl = document.getElementById('cv-avatar');
     if (c.image_url) {
         avatarEl.innerHTML = `<img src="${c.image_url}" class="w-full h-full object-cover">`;
@@ -53,10 +172,8 @@ function fillCustomerCard(c) {
         avatarEl.className = 'w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-700 font-bold text-lg flex-shrink-0';
     }
 
-    /* სახელი */
     document.getElementById('cv-name').textContent = c.name || '---';
 
-    /* სტატუსის badge */
     const statusBadge = document.getElementById('cv-status-badge');
     const statusColors = {
         'Active':    'bg-green-100 text-green-800',
@@ -66,44 +183,27 @@ function fillCustomerCard(c) {
     statusBadge.textContent = c.status || 'Potential';
     statusBadge.className = `text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColors[c.status] || 'bg-slate-100 text-slate-500'}`;
 
-    /* ტიპის badge */
     document.getElementById('cv-type-badge').textContent = c.customer_type === 'Person' ? 'ფიზ. პირი' : 'შპს';
 
-    /* სფეროს badge */
     const indBadge = document.getElementById('cv-industry-badge');
-    if (c.industry) {
-        indBadge.textContent = c.industry;
-        indBadge.classList.remove('hidden');
-    } else {
-        indBadge.classList.add('hidden');
-    }
+    if (c.industry) { indBadge.textContent = c.industry; indBadge.classList.remove('hidden'); }
+    else indBadge.classList.add('hidden');
 
-    /* meta ხაზი */
-    document.getElementById('cv-tax').textContent   = c.tax_id   ? `TAX: ${c.tax_id}`   : '';
-    document.getElementById('cv-phone').textContent = c.phone    ? c.phone               : '';
+    document.getElementById('cv-tax').textContent   = c.tax_id ? `TAX: ${c.tax_id}` : '';
+    document.getElementById('cv-phone').textContent = c.phone || '';
+
     const webMeta = document.getElementById('cv-website');
     if (c.website) {
         webMeta.textContent = c.website;
         webMeta.href = c.website.startsWith('http') ? c.website : `https://${c.website}`;
         webMeta.classList.remove('hidden');
-    } else {
-        webMeta.classList.add('hidden');
-    }
+    } else webMeta.classList.add('hidden');
 
-    /* დეტალები — მარცხენა სვეტი */
     document.getElementById('cv-legal').textContent = c.legal_address || '—';
 
     const actualEl = document.getElementById('cv-actual');
-    if (c.actual_address && c.map_url) {
-        actualEl.textContent = c.actual_address;
-        actualEl.href = c.map_url;
-    } else if (c.actual_address) {
-        actualEl.textContent = c.actual_address;
-        actualEl.href = '#';
-    } else {
-        actualEl.textContent = '—';
-        actualEl.href = '#';
-    }
+    actualEl.textContent = c.actual_address || '—';
+    actualEl.href = c.map_url || '#';
 
     const webEl    = document.getElementById('cv-web');
     const webEmpty = document.getElementById('cv-web-empty');
@@ -120,66 +220,47 @@ function fillCustomerCard(c) {
     document.getElementById('cv-vat').textContent = c.is_vat_payer ? '✓ კი' : '✗ არა';
     document.getElementById('cv-vat').style.color = c.is_vat_payer ? '#15803d' : '';
 
-    /* დეტალები — მარჯვენა სვეტი */
     document.getElementById('cv-contact1').textContent = c.contact_person_1 || '—';
     document.getElementById('cv-pos1').textContent     = c.position_1       || '—';
     document.getElementById('cv-phone1').textContent   = c.phone_1          || '—';
 
     const email1El = document.getElementById('cv-email1');
-    if (c.email_1) {
-        email1El.textContent = c.email_1;
-        email1El.href = `mailto:${c.email_1}`;
-    } else {
-        email1El.textContent = '—';
-        email1El.href = '#';
-    }
+    if (c.email_1) { email1El.textContent = c.email_1; email1El.href = `mailto:${c.email_1}`; }
+    else { email1El.textContent = '—'; email1El.href = '#'; }
 }
 
 
 /* ============================================================
    loadCustomerKPIs()
-   Supabase-იდან KPI-ების ჩატვირთვა:
-   ფილიალების რაოდენობა, აგრეგატები, სერვისები, ბოლო სერვისი
    ============================================================ */
 async function loadCustomerKPIs() {
     if (!activeCustomer) return;
 
-    /* ფილიალების რაოდენობა */
     const { count: branchCount } = await _supabase
-        .from('branches')
-        .select('*', { count: 'exact', head: true })
+        .from('branches').select('*', { count: 'exact', head: true })
         .eq('customer_id', activeCustomer.id);
 
-    /* აგრეგატების რაოდენობა */
     const { count: assetCount } = await _supabase
-        .from('assets')
-        .select('*', { count: 'exact', head: true })
+        .from('assets').select('*', { count: 'exact', head: true })
         .eq('customer_id', activeCustomer.id);
 
-    /* სერვის ლოგების რაოდენობა */
     const { count: serviceCount } = await _supabase
-        .from('service_logs')
-        .select('*', { count: 'exact', head: true })
+        .from('service_logs').select('*', { count: 'exact', head: true })
         .eq('customer_id', activeCustomer.id);
 
-    /* ბოლო სერვისის თარიღი */
     const { data: lastSvc } = await _supabase
-        .from('service_logs')
-        .select('service_date')
+        .from('service_logs').select('service_date')
         .eq('customer_id', activeCustomer.id)
-        .order('service_date', { ascending: false })
-        .limit(1);
+        .order('service_date', { ascending: false }).limit(1);
 
-    /* KPI ველების განახლება */
     document.getElementById('kpi-branches').textContent  = branchCount  ?? '—';
     document.getElementById('kpi-assets').textContent    = assetCount   ?? '—';
     document.getElementById('kpi-services').textContent  = serviceCount ?? '—';
 
     if (lastSvc && lastSvc.length > 0) {
         const d = new Date(lastSvc[0].service_date);
-        document.getElementById('kpi-last-service').textContent = d.toLocaleDateString('ka-GE', {
-            day: '2-digit', month: 'short', year: 'numeric'
-        });
+        document.getElementById('kpi-last-service').textContent =
+            d.toLocaleDateString('ka-GE', { day: '2-digit', month: 'short', year: 'numeric' });
     } else {
         document.getElementById('kpi-last-service').textContent = '—';
     }
@@ -188,77 +269,48 @@ async function loadCustomerKPIs() {
 
 /* ============================================================
    toggleCustomerDetails()
-   კლიენტის დეტალების სექციის ჩამოშლა / გაშლა
    ============================================================ */
 let customerDetailsOpen = true;
 function toggleCustomerDetails() {
     customerDetailsOpen = !customerDetailsOpen;
     const details = document.getElementById('cv-details');
     const icon    = document.getElementById('cv-toggle-icon');
-
     details.style.display = customerDetailsOpen ? '' : 'none';
-    /* ▲ ნიშნავს "დაკეცე" (ჩანს), ▼ ნიშნავს "გაშალე" (დაკეცილია) */
     icon.innerHTML = customerDetailsOpen
         ? '<polyline points="18 15 12 9 6 15"/>'
         : '<polyline points="6 9 12 15 18 9"/>';
 }
 
+function editActiveCustomer()   { if (activeCustomer) openCustomerModal(activeCustomer); }
 
-/* ============================================================
-   editActiveCustomer()
-   კლიენტის რედაქტირება — ახლანდელი activeCustomer
-   ============================================================ */
-function editActiveCustomer() {
-    if (activeCustomer) openCustomerModal(activeCustomer);
-}
-
-
-/* ============================================================
-   deleteActiveCustomer()
-   კლიენტის წაშლა — ახლანდელი activeCustomer
-   ============================================================ */
 async function deleteActiveCustomer() {
     if (!activeCustomer) return;
     if (confirm(`ნამდვილად გსურთ "${activeCustomer.name}"-ის წაშლა?`)) {
-        const { error } = await _supabase
-            .from('customers')
-            .delete()
-            .eq('id', activeCustomer.id);
-        if (!error) {
-            /* კლიენტების სიაზე დაბრუნება */
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.getElementById('customer-view').classList.add('active');
-            loadCustomers();
-        } else {
-            alert('წაშლის შეცდომა: ' + error.message);
-        }
+        const { error } = await _supabase.from('customers').delete().eq('id', activeCustomer.id);
+        if (!error) { showCustomers(); }
+        else alert('წაშლის შეცდომა: ' + error.message);
     }
 }
 
 
 /* ============================================================
    switchBranchTab(name, btn)
-   ტაბებს შორის გადართვა
-   name = 'overview' | 'map' | 'branches' | 'assets' | 'services'
    ============================================================ */
 function switchBranchTab(name, btn) {
-    /* ყველა ტაბის სტილის გასუფთავება */
-    document.querySelectorAll('.tabs button, #branch-view .flex.gap-1 button').forEach(b => {
+    document.querySelectorAll('#branch-view .flex.gap-1 button').forEach(b => {
         b.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
         b.classList.add('text-slate-400');
     });
-
-    /* ყველა პანელის დამალვა */
     document.querySelectorAll('.branch-panel').forEach(p => p.classList.add('hidden'));
 
-    /* არჩეული ტაბის გააქტიურება */
-    btn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
-    btn.classList.remove('text-slate-400');
+    if (btn) {
+        btn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+        btn.classList.remove('text-slate-400');
+    }
 
-    /* შესაბამისი პანელის გახსნა */
-    document.getElementById(`panel-${name}`).classList.remove('hidden');
+    const panel = document.getElementById(`panel-${name}`);
+    if (panel) panel.classList.remove('hidden');
 
-    /* ტაბის შიგთავსის ჩატვირთვა */
     if (name === 'overview')  loadOverviewTab();
     if (name === 'map')       loadLiveMapTab();
     if (name === 'branches')  loadBranches();
@@ -269,17 +321,17 @@ function switchBranchTab(name, btn) {
 
 /* ============================================================
    loadOverviewTab()
-   მთავარი ტაბი: მინი-რუკა + ბოლო სერვისები + ფილიალების მოკლე სია
+   ✅ FIX: სერვისების კლიკი → სერვის ლოგების გახსნა
+   ✅ FIX: ფილიალების კლიკი → ფილიალის dashboard-ზე გადასვლა
    ============================================================ */
 let overviewMap = null;
 async function loadOverviewTab() {
+
     /* მინი-რუკა */
     if (overviewMap) { overviewMap.remove(); overviewMap = null; }
 
     const { data: branches } = await _supabase
-        .from('branches')
-        .select('*')
-        .eq('customer_id', activeCustomer.id);
+        .from('branches').select('*').eq('customer_id', activeCustomer.id);
 
     setTimeout(() => {
         const mapDiv = document.getElementById('overview-map-container');
@@ -293,7 +345,16 @@ async function loadOverviewTab() {
             branches.forEach(b => {
                 if (b.lat && b.lng) {
                     const m = L.marker([b.lat, b.lng]).addTo(overviewMap);
-                    m.bindPopup(`<b>${b.name}</b><br>${b.address || ''}`);
+                    m.bindPopup(`
+                        <div style="font-family:sans-serif;padding:8px;min-width:140px;">
+                            <div style="font-weight:700;margin-bottom:4px;">${b.name}</div>
+                            <div style="font-size:11px;color:#64748b;">${b.address || ''}</div>
+                            <button onclick="window._openBranchFromMap(${b.id})"
+                                style="margin-top:6px;width:100%;background:#1e293b;color:white;border:none;padding:4px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-weight:700;">
+                                გახსნა →
+                            </button>
+                        </div>
+                    `);
                     markers.push(m);
                 }
             });
@@ -305,38 +366,68 @@ async function loadOverviewTab() {
         overviewMap.invalidateSize();
     }, 300);
 
-    /* ბოლო 5 სერვისი */
+    /* რუკის popup ღილაკისთვის */
+    window._openBranchFromMap = function(branchId) {
+        if (!branches) return;
+        const b = branches.find(x => x.id === branchId);
+        if (b) viewBranchDashboard(b);
+    };
+
+    /* ✅ FIX: ბოლო 5 სერვისი — კლიკაბელური */
     const { data: recentSvc } = await _supabase
         .from('service_logs')
-        .select('service_date, service_type, technician_name, branch_id')
+        .select('id, service_date, service_type, technician_name, branch_id, asset_id, job_description, assets(name, id), branches(name)')
         .eq('customer_id', activeCustomer.id)
         .order('service_date', { ascending: false })
         .limit(5);
 
     const svcEl = document.getElementById('overview-recent-services');
     if (recentSvc && recentSvc.length > 0) {
+        const typeColor = {
+            'PPM':          'bg-blue-100 text-blue-700',
+            'Emergency':    'bg-red-100 text-red-700',
+            'Corrective':   'bg-amber-100 text-amber-700',
+            'Installation': 'bg-green-100 text-green-700',
+            'Repair':       'bg-purple-100 text-purple-700',
+        };
         svcEl.innerHTML = recentSvc.map(s => `
-            <div class="flex items-center gap-3 py-2 border-b border-slate-50 last:border-0">
-                <span class="text-slate-300">${new Date(s.service_date).toLocaleDateString('ka-GE', {day:'2-digit', month:'short'})}</span>
-                <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${s.service_type === 'Emergency' ? 'bg-red-100 text-red-700' : s.service_type === 'PPM' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}">${s.service_type}</span>
-                <span class="text-slate-600 flex-1">${s.technician_name || '—'}</span>
+            <div class="flex items-start gap-2 py-2 border-b border-slate-50 last:border-0 hover:bg-slate-50 rounded-lg px-1 cursor-pointer transition"
+                 onclick='_openServiceDetail(${JSON.stringify(s)})'>
+                <div class="flex-shrink-0 text-right w-10">
+                    <div class="text-slate-400 text-[10px] font-medium">
+                        ${new Date(s.service_date).toLocaleDateString('ka-GE', {day:'2-digit', month:'short'})}
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-1.5 mb-0.5">
+                        <span class="px-1.5 py-0.5 text-[9px] font-bold rounded-full ${typeColor[s.service_type] || 'bg-slate-100 text-slate-500'}">${s.service_type || '—'}</span>
+                        <span class="text-slate-700 text-xs font-medium truncate">${s.technician_name || '—'}</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 truncate">
+                        ${s.branches?.name || ''} · ${s.assets?.name || '—'}
+                    </div>
+                    ${s.job_description ? `<div class="text-[10px] text-slate-300 truncate mt-0.5">${s.job_description.substring(0, 60)}...</div>` : ''}
+                </div>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" class="flex-shrink-0 mt-1"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
         `).join('');
     } else {
         svcEl.innerHTML = '<div class="text-xs text-slate-300 text-center py-4 italic">სერვის ჩანაწერები არ არის</div>';
     }
 
-    /* ფილიალების მოკლე სია */
+    /* ✅ FIX: ფილიალების კლიკაბელური სია */
     const branchListEl = document.getElementById('overview-branches-list');
     if (branches && branches.length > 0) {
         branchListEl.innerHTML = branches.map(b => `
-            <div class="flex items-center gap-2 py-2 border-b border-slate-50 last:border-0">
+            <div class="flex items-center gap-2 py-2 border-b border-slate-50 last:border-0 hover:bg-slate-50 rounded-lg px-1 cursor-pointer transition"
+                 onclick='viewBranchDashboard(${JSON.stringify(b)})'>
                 <div class="w-2 h-2 rounded-full flex-shrink-0 ${b.is_active ? 'bg-green-400' : 'bg-slate-300'}"></div>
-                <div class="flex-1">
-                    <div class="text-slate-800 font-medium">${b.name}</div>
-                    <div class="text-[10px] text-slate-400">${b.address || '—'}</div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-slate-800 font-medium text-sm truncate">${b.name}</div>
+                    <div class="text-[10px] text-slate-400 truncate">${b.address || '—'}</div>
                 </div>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${b.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'}">${b.is_active ? 'Active' : 'Inactive'}</span>
+                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${b.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'}">${b.is_active ? 'Active' : 'Inactive'}</span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" class="flex-shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
         `).join('');
     } else {
@@ -346,15 +437,44 @@ async function loadOverviewTab() {
 
 
 /* ============================================================
-   viewBranchDashboard(b)
-   ფილიალის ბარათზე დაჭერისას — branch dashboard-ზე გადასვლა.
-   b = ფილიალის ობიექტი
+   _openServiceDetail(s)
+   სერვის ლოგის გახსნა overview-დან კლიკისას
    ============================================================ */
-/* viewBranchDashboard — branch_dashboard.js-შია განსაზღვრული */
+async function _openServiceDetail(s) {
+    /* ფილიალი */
+    const { data: branch } = await _supabase.from('branches').select('*').eq('id', s.branch_id).single();
+    /* asset */
+    const { data: asset  } = await _supabase.from('assets').select('*').eq('id', s.asset_id).single();
+
+    if (branch) activeBranch = branch;
+    if (asset)  activeAsset  = asset;
+    else activeAsset = { id: s.asset_id, name: s.assets?.name || 'სერვისი' };
+
+    document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+    document.getElementById('service-logs-view').classList.add('active');
+    document.getElementById('service-view-title').innerText = activeAsset.name || 'სერვისის ისტორია';
+    loadServiceLogs();
+}
+
+
+/* ============================================================
+   viewBranchDashboard(b) — branch_ui.js wrapper
+   breadcrumb-ის განახლება
+   ============================================================ */
+function viewBranchDashboard(b) {
+    window._nav.branch = b;
+    activeBranch = b;
+
+    _showBreadcrumb();
+    _renderBreadcrumb();
+
+    /* branch_dashboard.js-ის ფუნქცია */
+    _doViewBranchDashboard(b);
+}
+
 
 /* ============================================================
    loadLiveMapTab()
-   ლაივ რუკა ტაბი — Leaflet ClusterMap
    ============================================================ */
 async function loadLiveMapTab() {
     if (liveMap) { liveMap.remove(); liveMap = null; }
@@ -372,6 +492,8 @@ async function loadLiveMapTab() {
     });
 
     setTimeout(() => {
+        const container = document.getElementById('live-map-container');
+        if (!container) return;
         liveMap = L.map('live-map-container', { zoomControl: false }).setView([41.7151, 44.8271], 7);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CartoDB' }).addTo(liveMap);
         L.control.zoom({ position: 'bottomright' }).addTo(liveMap);
@@ -401,19 +523,17 @@ async function loadLiveMapTab() {
 
 
 /* ============================================================
-   loadBranches()
-   ფილიალები ტაბი — ბარათების სია (ძველი სტილი)
+   loadBranches() — ფილიალები ტაბი
    ============================================================ */
 async function loadBranches() {
     const { data, error } = await _supabase
-        .from('branches')
-        .select('*')
+        .from('branches').select('*')
         .eq('customer_id', activeCustomer.id)
         .order('created_at');
 
     if (error) return;
 
-    /* overview-ს filter select-ების შევსება */
+    /* filter select-ების შევსება */
     ['assets-filter-branch', 'services-filter-branch'].forEach(selId => {
         const sel = document.getElementById(selId);
         if (!sel) return;
@@ -421,8 +541,7 @@ async function loadBranches() {
         data.forEach(b => {
             if (!existing.includes(b.id)) {
                 const opt = document.createElement('option');
-                opt.value = b.id;
-                opt.textContent = b.name;
+                opt.value = b.id; opt.textContent = b.name;
                 sel.appendChild(opt);
             }
         });
@@ -436,7 +555,6 @@ async function loadBranches() {
         return;
     }
 
-    /* priority ფერები */
     const prioColor = {
         'Critical': 'bg-red-100 text-red-700',
         'High':     'bg-amber-100 text-amber-700',
@@ -444,17 +562,13 @@ async function loadBranches() {
         'Low':      'bg-slate-100 text-slate-500',
     };
     const prioDot = {
-        'Critical': '#dc2626',
-        'High':     '#f59e0b',
-        'Standard': '#22c55e',
-        'Low':      '#94a3b8',
+        'Critical': '#dc2626', 'High': '#f59e0b',
+        'Standard': '#22c55e', 'Low':  '#94a3b8',
     };
 
     container.innerHTML = data.map((b, i) => `
         <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col md:flex-row mb-4 group hover:shadow-lg transition-all cursor-pointer"
              onclick='viewBranchDashboard(${JSON.stringify(b)})'>
-
-            <!-- ფოტო + მინი-რუკა -->
             <div class="relative bg-slate-100 overflow-hidden flex-shrink-0" style="width:260px; min-height:200px;">
                 ${b.image_url
                     ? `<img src="${b.image_url}" class="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition duration-700">`
@@ -462,14 +576,12 @@ async function loadBranches() {
                 }
                 <div id="bmap-${i}" class="absolute bottom-3 left-3 right-3 rounded-2xl overflow-hidden border-2 border-white shadow-lg" style="height:80px;"></div>
             </div>
-
-            <!-- ინფო -->
             <div class="flex-1 p-5 flex flex-col justify-between">
                 <div>
                     <div class="flex justify-between items-start mb-2">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${b.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}">${b.is_active ? 'Active' : 'Inactive'}</span>
-                            ${b.service_priority ? `<span class="text-[10px] font-medium px-2 py-0.5 rounded-full ${prioColor[b.service_priority] || 'bg-slate-100 text-slate-500'}"><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:${prioDot[b.service_priority] || '#94a3b8'};margin-right:3px;vertical-align:middle;"></span>${b.service_priority}</span>` : ''}
+                            ${b.service_priority ? `<span class="text-[10px] font-medium px-2 py-0.5 rounded-full ${prioColor[b.service_priority] || 'bg-slate-100 text-slate-500'}"><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:${prioDot[b.service_priority]||'#94a3b8'};margin-right:3px;vertical-align:middle;"></span>${b.service_priority}</span>` : ''}
                         </div>
                         <button onclick='event.stopPropagation(); openBranchModal(${JSON.stringify(b)})'
                             class="text-blue-500 text-[11px] font-bold hover:underline flex items-center gap-1">
@@ -499,11 +611,9 @@ async function loadBranches() {
                     </button>
                 </div>
             </div>
-
         </div>
     `).join('');
 
-    /* მინი-რუკები */
     data.forEach((b, i) => {
         if (b.lat && b.lng) {
             const m = L.map(`bmap-${i}`, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false })
@@ -519,17 +629,12 @@ async function loadBranches() {
 
 /* ============================================================
    loadAllAssets()
-   აგრეგატები ტაბი — ყველა ფილიალის აგრეგატები ცხრილად
    ============================================================ */
 async function loadAllAssets() {
     const branchFilter = document.getElementById('assets-filter-branch')?.value || '';
 
-    let query = _supabase
-        .from('assets')
-        .select('*, branches(name)')
-        .eq('customer_id', activeCustomer.id)
-        .order('name');
-
+    let query = _supabase.from('assets')
+        .select('*, branches(name)').eq('customer_id', activeCustomer.id).order('name');
     if (branchFilter) query = query.eq('branch_id', branchFilter);
 
     const { data, error } = await query;
@@ -565,7 +670,9 @@ async function loadAllAssets() {
                                                              'bg-amber-100 text-amber-700'
                             }">${a.status || '—'}</span>
                         </td>
-                        <td class="py-2.5 px-2 text-slate-400">${a.last_service_date ? new Date(a.last_service_date).toLocaleDateString('ka-GE', {day:'2-digit', month:'short', year:'numeric'}) : '—'}</td>
+                        <td class="py-2.5 px-2 text-slate-400">${a.last_service_date
+                            ? new Date(a.last_service_date).toLocaleDateString('ka-GE', {day:'2-digit', month:'short', year:'numeric'})
+                            : '—'}</td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -573,7 +680,6 @@ async function loadAllAssets() {
     `;
 }
 
-/* viewAssetFromTable — asset-view-ზე გადასვლა (არა service-logs) */
 function viewAssetFromTable(asset) {
     activeBranch = { id: asset.branch_id, name: asset.branches?.name || '' };
     document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
@@ -582,7 +688,6 @@ function viewAssetFromTable(asset) {
     loadAssets();
 }
 
-/* viewServiceFromTable — სერვის ლოგებზე გადასვლა ცხრილიდან */
 function viewServiceFromTable(log) {
     activeBranch = { id: log.branch_id, name: log.branches?.name || '' };
     activeAsset  = { id: log.asset_id,  name: log.assets?.name   || 'სერვისი' };
@@ -595,18 +700,15 @@ function viewServiceFromTable(log) {
 
 /* ============================================================
    loadAllServices()
-   სერვისები ტაბი — ყველა ფილიალის სერვის ლოგები ცხრილად
    ============================================================ */
 async function loadAllServices() {
     const typeFilter   = document.getElementById('services-filter-type')?.value   || '';
     const branchFilter = document.getElementById('services-filter-branch')?.value || '';
 
-    let query = _supabase
-        .from('service_logs')
+    let query = _supabase.from('service_logs')
         .select('*, branches(name), assets(name)')
         .eq('customer_id', activeCustomer.id)
         .order('service_date', { ascending: false });
-
     if (typeFilter)   query = query.eq('service_type', typeFilter);
     if (branchFilter) query = query.eq('branch_id', branchFilter);
 
@@ -620,11 +722,9 @@ async function loadAllServices() {
     }
 
     const typeColors = {
-        'PPM':          'bg-blue-100 text-blue-700',
-        'Corrective':   'bg-amber-100 text-amber-700',
-        'Emergency':    'bg-red-100 text-red-700',
-        'Installation': 'bg-green-100 text-green-700',
-        'Repair':       'bg-purple-100 text-purple-700',
+        'PPM': 'bg-blue-100 text-blue-700', 'Corrective': 'bg-amber-100 text-amber-700',
+        'Emergency': 'bg-red-100 text-red-700', 'Installation': 'bg-green-100 text-green-700',
+        'Repair': 'bg-purple-100 text-purple-700',
     };
 
     container.innerHTML = `
