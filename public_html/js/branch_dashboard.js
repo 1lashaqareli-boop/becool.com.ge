@@ -190,7 +190,7 @@ function switchBdcTab(name, btn) {
     if (name==='ac')      loadBdcAssetsFull('AC','bdc-ac-full');
     if (name==='service') loadBdcServices();
     if (name==='stats')   loadBdcStats();
-    if (name==='weather') loadBdcWeather();
+    if (name==='weather') loadBdcWeatherAnalytics();
 }
 
 /* ── loadBdcRecentServices ── */
