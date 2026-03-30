@@ -35,11 +35,8 @@ function showAssets() {
 /* viewAssets(b) — ფილიალის ბარათიდან აგრეგატებზე გადასვლა
    b = ფილიალის ობიექტი */
 function viewAssets(b) {
-    activeBranch = b; /* გლობალური ცვლადის განახლება */
-    document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-    document.getElementById('asset-view').classList.add('active');
-    document.getElementById('asset-view-title').innerText = b.name; /* სათაური */
-    loadAssets();
+    activeBranch = b;
+    loadAssetView(b);  // ← asset_view.js-ის ფუნქცია
 }
 
 /* viewServiceLogs(asset) — აგრეგატიდან სერვის ლოგებზე გადასვლა
