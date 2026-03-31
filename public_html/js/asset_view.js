@@ -504,14 +504,18 @@ function _avShowListPanel() {
         return;
     }
 
-    const filtered = window._av.branchAssets.filter(a => a.asset_type === type);
-    titleEl.textContent = type;
-    subEl.textContent   = filtered.length + ' აგრეგატი';
+  // ფილტრაცია პატარა ასოებით, რომ ბაზას დაემთხვეს
+const filtered = window._av.branchAssets.filter(a => 
+    (a.asset_type || "").toLowerCase() === (type || "").toLowerCase()
+);
 
-    if (!filtered.length) {
-        grid.innerHTML = `<div class="av-empty">${type} — ჩანაწერები არ არის</div>`;
-        return;
-    }
+titleEl.textContent = type;
+subEl.textContent   = filtered.length + ' აგრეგატი';
+
+if (!filtered.length) {
+    grid.innerHTML = `<div id="av-empty-msg" class="av-empty">${type} — ჩანაწერები არ არის</div>`;
+    return;
+}
 
     const stClass = { Operational:'av-s-ok', Maintenance_Required:'av-s-maint', Down:'av-s-down' };
     const stLabel = { Operational:'OK', Maintenance_Required:'Maint.', Down:'Down' };
