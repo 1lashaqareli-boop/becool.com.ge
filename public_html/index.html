@@ -1416,69 +1416,111 @@
     <!-- ############################################################## -->
     <!-- #################### აგრეგატის მოდალი (დამატება/რედაქტირება) #################### -->
     <!-- ############################################################## -->
-    <div id="a-modal" class="modal">
-        <div class="bg-white rounded-[3rem] shadow-2xl w-full max-w-6xl p-10 relative border-t-8 border-blue-400">
-            <div class="flex justify-between items-center mb-8 border-b pb-6">
-                <h3 class="text-3xl font-black italic text-slate-800 uppercase tracking-tighter" id="a-modal-title">აგრეგატის პასპორტიზაცია</h3>
-                <button onclick="closeModals()" class="p-3 bg-slate-50 rounded-full transition"><i data-lucide="x"></i></button>
-            </div>
-            
-            <!-- აგრეგატის ფორმის ველები -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <input type="hidden" id="a-id">
-                <input type="hidden" id="a-url">
-                <div class="md:col-span-2"><label>დასახელება (NAME)</label><input id="a-name" class="input-card font-black"></div>
-                <div><label>ტიპი (asset_type)</label><input id="a-type" placeholder="მაგ: Chiller, AHU" class="input-card"></div>
-                <div><label>კატეგორია (category)</label>
-                    <select id="a-category" class="input-card">
-                        <option value="AC">AC</option>
-                        <option value="Refrigeration">Refrigeration</option>
-                    </select>
-                </div>
-                <div><label>ტეგი (tag_number)</label><input id="a-tag" placeholder="მაგ: CHL-01" class="input-card"></div>
-                <div><label>ბრენდი (brand)</label><input id="a-brand" class="input-card"></div>
-                <div><label>მოდელი (model)</label><input id="a-model" class="input-card"></div>
-                <div><label>სერიული (serial_number)</label><input id="a-serial" class="input-card"></div>
-                <div><label>გამოშვების წელი (manufacture_year)</label><input id="a-year" type="number" class="input-card"></div>
-                <div><label>სიმძლავრე kW (cooling_capacity_kw)</label><input id="a-capacity" type="number" step="0.1" class="input-card"></div>
-                <div><label>ფრეონი (refrigerant_type)</label><input id="a-refr-type" placeholder="R410A" class="input-card"></div>
-                <div><label>რაოდენობა კგ (refrigerant_charge_kg)</label><input id="a-refr-charge" type="number" step="0.1" class="input-card"></div>
-                <div><label>ძაბვა (voltage)</label><input id="a-voltage" type="number" class="input-card" value="400"></div>
-                <div><label>ფაზა (phase)</label>
-                    <select id="a-phase" class="input-card"><option value="3-Phase">3-Phase</option><option value="1-Phase">1-Phase</option></select>
-                </div>
-                <div><label>დენი Amp (max_current_amp)</label><input id="a-current" type="number" step="0.1" class="input-card"></div>
-                <div class="md:col-span-2"><label>ზუსტი ლოკაცია (location_on_site)</label><input id="a-loc" class="input-card"></div>
-                <div><label>მონტაჟი (installation_date)</label><input id="a-inst-date" type="date" class="input-card"></div>
-                <div><label>გარანტია (warranty_until)</label><input id="a-warn-date" type="date" class="input-card"></div>
-                <div><label>სტატუსი (status)</label>
-                    <select id="a-status" class="input-card"><option value="Operational">Operational</option><option value="Maintenance_Required">Maintenance</option><option value="Down">Down</option></select>
-                </div>
-                <div><label>მდგომარეობა 1-10 (condition_score)</label><input id="a-score" type="number" min="1" max="10" class="input-card"></div>
-                <div><label>QR კოდი (qr_code_id)</label><input id="a-qr" class="input-card"></div>
-                <div><label>IoT Device ID</label><input id="a-iot" class="input-card"></div>
-                <div><label>სერვისის ინტერვალი (დღე)</label><input id="a-interval" type="number" class="input-card" value="180"></div>
-                <div><label>ბოლო სერვისი (last_service_date)</label><input id="a-last-serv" type="date" class="input-card"></div>
-                <div class="md:col-span-4"><label>ტექნიკური მონაცემები JSON (technical_specs)</label><textarea id="a-tech" class="input-card font-mono text-xs" placeholder='{"compressor": "Scroll", "oil": "POE"}'></textarea></div>
-                <div class="md:col-span-2 bg-slate-50 p-6 rounded-3xl border-2 border-dashed">
-                    <label>დანადგარის ფოტო (image_url)</label>
-                    <input type="file" id="a-file" class="hidden" onchange="previewImg(this, 'a-prev')">
-                    <div onclick="document.getElementById('a-file').click()" class="cursor-pointer">
-                        <img id="a-prev" class="w-full h-32 object-contain hidden mb-2">
-                        <div id="a-placeholder" class="text-[10px] font-bold text-blue-500 uppercase tracking-widest">ატვირთვა <i data-lucide="camera" class="inline w-4 h-4 ml-1"></i></div>
-                    </div>
-                </div>
-                <div class="md:col-span-1 border p-4 rounded-3xl"><label>Manual URL</label><input id="a-manual" class="text-xs input-card"></div>
-                <div class="md:col-span-1 border p-4 rounded-3xl"><label>Wiring Diagram</label><input id="a-wiring" class="text-xs input-card"></div>
+   <div id="a-modal" class="modal">
+    <div class="bg-white rounded-[3rem] shadow-2xl w-full max-w-6xl p-10 relative border-t-8 border-blue-400">
+        <div class="flex justify-between items-center mb-8 border-b pb-6">
+            <h3 class="text-3xl font-black italic text-slate-800 uppercase tracking-tighter" id="a-modal-title">აგრეგატის პასპორტიზაცია</h3>
+            <button onclick="closeModals()" class="p-3 bg-slate-50 rounded-full transition"><i data-lucide="x"></i></button>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <input type="hidden" id="a-id">
+            <input type="hidden" id="a-url">
+
+            <div class="md:col-span-2">
+                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">დასახელება (NAME)</label>
+                <input id="a-name" class="input-card font-black">
             </div>
 
-            <div class="flex gap-4 mt-12">
-                <button onclick="saveAsset()" class="flex-[2] bg-blue-600 text-white font-black py-5 rounded-[2rem] shadow-xl hover:bg-blue-700 transition uppercase">შენახვა 💾</button>
-                <button onclick="closeModals()" class="flex-1 bg-slate-100 py-5 rounded-[2rem] font-black text-slate-400">გაუქმება</button>
+            <div>
+                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">ტიპი (ASSET_TYPE)</label>
+                <select id="a-type" class="input-card w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 appearance-none cursor-pointer">
+                    <option value="" disabled selected>— აირჩიეთ ტიპი —</option>
+                    <optgroup label="❄️ კონდიცირება">
+                        <option value="Split">Split</option>
+                        <option value="Multi-Split">Multi-Split</option>
+                        <option value="Semi-Industrial">Semi-Industrial</option>
+                        <option value="VRF">VRF</option>
+                        <option value="Chiller">Chiller</option>
+                        <option value="Rooftop">Rooftop</option>
+                    </optgroup>
+                    <optgroup label="🍦 მაცივრები">
+                        <option value="Reach-in">Reach-in</option>
+                        <option value="Walk-in">Walk-in</option>
+                        <option value="Display Case">Display Case</option>
+                        <option value="Blast Chiller">Blast Chiller</option>
+                        <option value="Condensing Unit">Condensing Unit</option>
+                    </optgroup>
+                    <optgroup label="🔥 სხვა">
+                        <option value="Boiler">Boiler</option>
+                        <option value="DHW">DHW</option>
+                        <option value="Electric Heater">Electric Heater</option>
+                        <option value="Pump">Pump</option>
+                        <option value="Recuperator">Recuperator</option>
+                        <option value="AHU">AHU</option>
+                        <option value="Fan">Fan</option>
+                        <option value="Other">Other</option>
+                    </optgroup>
+                </select>
             </div>
+
+            <div>
+                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">კატეგორია (CATEGORY)</label>
+                <select id="a-category" class="input-card">
+                    <option value="AC">AC</option>
+                    <option value="Refrigeration">Refrigeration</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div><label>ტეგი (TAG_NUMBER)</label><input id="a-tag" placeholder="მაგ: CHL-01" class="input-card"></div>
+            <div><label>ბრენდი (BRAND)</label><input id="a-brand" class="input-card"></div>
+            <div><label>მოდელი (MODEL)</label><input id="a-model" class="input-card"></div>
+            <div><label>სერიული (SERIAL_NUMBER)</label><input id="a-serial" class="input-card"></div>
+            <div><label>გამოშვების წელი</label><input id="a-year" type="number" class="input-card"></div>
+            <div><label>სიმძლავრე kW</label><input id="a-capacity" type="number" step="0.1" class="input-card"></div>
+            <div><label>ფრეონი</label><input id="a-refr-type" placeholder="R410A" class="input-card"></div>
+            <div><label>რაოდენობა კგ</label><input id="a-refr-charge" type="number" step="0.1" class="input-card"></div>
+            <div><label>ძაბვა</label><input id="a-voltage" type="number" class="input-card" value="400"></div>
+            <div><label>ფაზა</label>
+                <select id="a-phase" class="input-card"><option value="3-Phase">3-Phase</option><option value="1-Phase">1-Phase</option></select>
+            </div>
+            <div><label>დენი Amp</label><input id="a-current" type="number" step="0.1" class="input-card"></div>
+            <div class="md:col-span-2"><label>ზუსტი ლოკაცია</label><input id="a-loc" class="input-card"></div>
+            <div><label>მონტაჟი</label><input id="a-inst-date" type="date" class="input-card"></div>
+            <div><label>გარანტია</label><input id="a-warn-date" type="date" class="input-card"></div>
+            <div><label>სტატუსი</label>
+                <select id="a-status" class="input-card">
+                    <option value="Operational">Operational</option>
+                    <option value="Maintenance_Required">Maintenance</option>
+                    <option value="Down">Down</option>
+                </select>
+            </div>
+            <div><label>მდგომარეობა 1-10</label><input id="a-score" type="number" min="1" max="10" class="input-card"></div>
+            <div><label>QR კოდი</label><input id="a-qr" class="input-card"></div>
+            <div><label>IoT Device ID</label><input id="a-iot" class="input-card"></div>
+            <div><label>ინტერვალი (დღე)</label><input id="a-interval" type="number" class="input-card" value="180"></div>
+            <div><label>ბოლო სერვისი</label><input id="a-last-serv" type="date" class="input-card"></div>
+            <div class="md:col-span-4"><label>JSON Specs</label><textarea id="a-tech" class="input-card font-mono text-xs h-20" placeholder='{"compressor": "Scroll"}'></textarea></div>
+            
+            <div class="md:col-span-2 bg-slate-50 p-6 rounded-3xl border-2 border-dashed">
+                <label>დანადგარის ფოტო</label>
+                <input type="file" id="a-file" class="hidden" onchange="previewImg(this, 'a-prev')">
+                <div onclick="document.getElementById('a-file').click()" class="cursor-pointer">
+                    <img id="a-prev" class="w-full h-32 object-contain hidden mb-2">
+                    <div id="a-placeholder" class="text-[10px] font-bold text-blue-500 uppercase tracking-widest">ატვირთვა <i data-lucide="camera" class="inline w-4 h-4 ml-1"></i></div>
+                </div>
+            </div>
+            <div class="md:col-span-1 border p-4 rounded-3xl"><label>Manual URL</label><input id="a-manual" class="text-xs input-card"></div>
+            <div class="md:col-span-1 border p-4 rounded-3xl"><label>Wiring Diagram</label><input id="a-wiring" class="text-xs input-card"></div>
+        </div>
+
+        <div class="flex gap-4 mt-12">
+            <button onclick="saveAsset()" class="flex-[2] bg-blue-600 text-white font-black py-5 rounded-[2rem] shadow-xl hover:bg-blue-700 transition uppercase">შენახვა 💾</button>
+            <button onclick="closeModals()" class="flex-1 bg-slate-100 py-5 rounded-[2rem] font-black text-slate-400">გაუქმება</button>
         </div>
     </div>
-
+</div>
     <!-- ################################################################# -->
     <!-- #################### სერვისის რეპორტის მოდალი (დამატება) #################### -->
     <!-- ################################################################# -->
