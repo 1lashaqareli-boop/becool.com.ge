@@ -1,10 +1,8 @@
 /* ============================================================
    BECOOL CRM — branch_ui.js (სრული, ყველა fix)
-   FIX 1: overview ბოლო სერვ. — assets join სწორი სინტ.
-   FIX 2/3/5: service_logs query — assets!inner join გარეშე
-   FIX 3: loadCustomerKPIs — realtime + auto refresh
-   FIX 4: viewBranchDashboard სრული
-   FIX 6: _openAssetFromTable → branch dashboard assets tab
+   FIX 1: service query — branch_id-ით (customer_id null-ის გვერდი)
+   FIX 2: _openAssetFromTable → loadAssetView
+   FIX 7: exportAllAssetsExcel
    ============================================================ */
 
 let _branchesData     = [];
@@ -36,18 +34,16 @@ function _renderBreadcrumb() {
         </button>`;
     if (c) {
         html += `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>`;
-        const avatar = c.image_url
-            ? `<img src="${c.image_url}" class="w-4 h-4 rounded object-cover flex-shrink-0">`
-            : `<div class="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-[8px] font-black text-white flex-shrink-0">${(c.name||'BC').substring(0,2).toUpperCase()}</div>`;
+        const av = c.image_url ? `<img src="${c.image_url}" class="w-4 h-4 rounded object-cover flex-shrink-0">` : `<div class="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-[8px] font-black text-white flex-shrink-0">${(c.name||'BC').substring(0,2).toUpperCase()}</div>`;
         if (b) {
-            html += `<button onclick="backToCustomer()" class="flex items-center gap-1.5 text-slate-400 hover:text-white transition text-xs font-medium truncate max-w-[150px]">${avatar}<span class="truncate">${c.name||'---'}</span></button>
+            html += `<button onclick="backToCustomer()" class="flex items-center gap-1.5 text-slate-400 hover:text-white transition text-xs font-medium truncate max-w-[150px]">${av}<span class="truncate">${c.name||'---'}</span></button>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
             <span class="flex items-center gap-1.5 text-white font-bold text-xs truncate max-w-[180px]">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 <span class="truncate">${b.name||'---'}</span>
             </span>`;
         } else {
-            html += `<span class="flex items-center gap-1.5 text-white font-bold text-xs truncate max-w-[200px]">${avatar}<span class="truncate">${c.name||'---'}</span></span>`;
+            html += `<span class="flex items-center gap-1.5 text-white font-bold text-xs truncate max-w-[200px]">${av}<span class="truncate">${c.name||'---'}</span></span>`;
         }
     }
     html += '</div>';
@@ -65,7 +61,6 @@ function _showBreadcrumb() {
     const el = document.getElementById('_breadcrumb');
     if (el) el.style.display = '';
 }
-
 function backToCustomer() {
     if (!window._nav.customer) { showCustomers(); return; }
     window._nav.branch = null;
@@ -77,7 +72,6 @@ function backToCustomer() {
     switchBranchTab('overview', document.getElementById('tab-overview'));
     _renderBreadcrumb();
 }
-
 function viewBranchDashboard(b) {
     window._nav.branch = b;
     activeBranch = b;
@@ -87,7 +81,7 @@ function viewBranchDashboard(b) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   viewBranches(c)
+   viewBranches
    ══════════════════════════════════════════════════════════════ */
 function viewBranches(c) {
     activeCustomer = c;
@@ -103,7 +97,7 @@ function viewBranches(c) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   fillCustomerCard(c)
+   fillCustomerCard
    ══════════════════════════════════════════════════════════════ */
 function fillCustomerCard(c) {
     const av = document.getElementById('cv-avatar');
@@ -114,106 +108,89 @@ function fillCustomerCard(c) {
         av.textContent = (c.name||'BC').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
         av.className = 'w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-700 font-bold text-lg flex-shrink-0';
     }
-    const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v||''; };
-    const setClass = (id,cls) => { const e=document.getElementById(id); if(e) e.className=cls; };
-    const setAttr  = (id,attr,v) => { const e=document.getElementById(id); if(e) e[attr]=v; };
-
-    set('cv-name', c.name||'---');
-
+    const s = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v||''; };
+    s('cv-name', c.name||'---');
     const sc = {Active:'bg-green-100 text-green-800',Potential:'bg-amber-100 text-amber-800',Passive:'bg-slate-100 text-slate-500'};
     const sb = document.getElementById('cv-status-badge');
     if (sb) { sb.textContent=c.status||'Potential'; sb.className=`text-[10px] font-bold px-2 py-0.5 rounded-full ${sc[c.status]||'bg-slate-100 text-slate-500'}`; }
-    set('cv-type-badge-text', c.customer_type==='Person'?'ფიზ. პირი':'შპს');
-    const tb = document.getElementById('cv-type-badge'); if(tb) tb.textContent=c.customer_type==='Person'?'ფიზ. პირი':'შპს';
-
+    const tb = document.getElementById('cv-type-badge');
+    if (tb) tb.textContent = c.customer_type==='Person'?'ფიზ. პირი':'შპს';
     const ib = document.getElementById('cv-industry-badge');
     if (ib) { if(c.industry){ib.textContent=c.industry;ib.classList.remove('hidden');}else ib.classList.add('hidden'); }
-
-    set('cv-tax',   c.tax_id   ? `TAX: ${c.tax_id}` : '');
-    set('cv-phone', c.phone || '');
-
+    s('cv-tax',   c.tax_id   ? `TAX: ${c.tax_id}` : '');
+    s('cv-phone', c.phone || '');
     const wm = document.getElementById('cv-website');
     if (wm) { if(c.website){wm.textContent=c.website;wm.href=c.website.startsWith('http')?c.website:`https://${c.website}`;wm.classList.remove('hidden');}else wm.classList.add('hidden'); }
-
-    set('cv-legal', c.legal_address||'—');
-
+    s('cv-legal', c.legal_address||'—');
     const ae = document.getElementById('cv-actual');
     if (ae) { ae.textContent=c.actual_address||'—'; ae.href=c.map_url||'#'; }
-
     const we=document.getElementById('cv-web'), wo=document.getElementById('cv-web-empty');
-    if(we&&wo){
-        if(c.website){we.textContent=c.website;we.href=c.website.startsWith('http')?c.website:`https://${c.website}`;we.classList.remove('hidden');wo.classList.add('hidden');}
-        else{we.classList.add('hidden');wo.classList.remove('hidden');}
-    }
-
-    const cvVat = document.getElementById('cv-vat');
-    if(cvVat){cvVat.textContent=c.is_vat_payer?'✓ კი':'✗ არა';cvVat.style.color=c.is_vat_payer?'#15803d':'';}
-
-    set('cv-contact1', c.contact_person_1||'—');
-    set('cv-pos1',     c.position_1||'—');
-    set('cv-phone1',   c.phone_1||'—');
-
+    if(we&&wo){ if(c.website){we.textContent=c.website;we.href=c.website.startsWith('http')?c.website:`https://${c.website}`;we.classList.remove('hidden');wo.classList.add('hidden');}else{we.classList.add('hidden');wo.classList.remove('hidden');} }
+    const vat=document.getElementById('cv-vat');
+    if(vat){vat.textContent=c.is_vat_payer?'✓ კი':'✗ არა';vat.style.color=c.is_vat_payer?'#15803d':'';}
+    s('cv-contact1',c.contact_person_1||'—');s('cv-pos1',c.position_1||'—');s('cv-phone1',c.phone_1||'—');
     const e1=document.getElementById('cv-email1');
     if(e1){if(c.email_1){e1.textContent=c.email_1;e1.href=`mailto:${c.email_1}`;}else{e1.textContent='—';e1.href='#';}}
 }
 
 /* ══════════════════════════════════════════════════════════════
-   FIX 3: loadCustomerKPIs — ავტო განახლება
+   FIX 1+3: loadCustomerKPIs — branch_id-ების გზით (customer_id null-safe)
    ══════════════════════════════════════════════════════════════ */
 async function loadCustomerKPIs() {
     if (!activeCustomer) return;
-    const [{ count:bc },{ count:ac },{ count:sc },{ data:ls }] = await Promise.all([
-        _supabase.from('branches').select('*',{count:'exact',head:true}).eq('customer_id',activeCustomer.id),
-        _supabase.from('assets').select('*',{count:'exact',head:true}).eq('customer_id',activeCustomer.id),
-        _supabase.from('service_logs').select('*',{count:'exact',head:true}).eq('customer_id',activeCustomer.id),
-        _supabase.from('service_logs').select('service_date').eq('customer_id',activeCustomer.id).order('service_date',{ascending:false}).limit(1),
-    ]);
-    const s = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v??'—'; };
-    s('kpi-branches',  bc);
-    s('kpi-assets',    ac);
-    s('kpi-services',  sc);
-    s('kpi-last-service', ls?.[0] ? new Date(ls[0].service_date).toLocaleDateString('ka-GE',{day:'2-digit',month:'short',year:'numeric'}) : '—');
+    /* branches */
+    const {data:branches, count:bc} = await _supabase
+        .from('branches').select('id',{count:'exact'}).eq('customer_id',activeCustomer.id);
+    /* assets */
+    const {count:ac} = await _supabase
+        .from('assets').select('*',{count:'exact',head:true}).eq('customer_id',activeCustomer.id);
+    /* service_logs — branch_id IN (...) გამოვიყენოთ (customer_id null-safe) */
+    const branchIds = (branches||[]).map(b=>b.id);
+    let sc = 0, lastDate = '—';
+    if (branchIds.length) {
+        const {count:sc2} = await _supabase
+            .from('service_logs').select('*',{count:'exact',head:true}).in('branch_id',branchIds);
+        sc = sc2 || 0;
+        const {data:ls} = await _supabase
+            .from('service_logs').select('service_date').in('branch_id',branchIds)
+            .order('service_date',{ascending:false}).limit(1);
+        if (ls?.[0]) lastDate = new Date(ls[0].service_date).toLocaleDateString('ka-GE',{day:'2-digit',month:'short',year:'numeric'});
+    }
+    const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v??'—'; };
+    set('kpi-branches',    bc);
+    set('kpi-assets',      ac);
+    set('kpi-services',    sc);
+    set('kpi-last-service',lastDate);
 }
 
 /* customer card controls */
 let _cvOpen = true;
 function toggleCustomerDetails() {
-    _cvOpen = !_cvOpen;
-    const d=document.getElementById('cv-details'), i=document.getElementById('cv-toggle-icon');
-    if(d) d.style.display=_cvOpen?'':'none';
-    if(i) i.innerHTML=_cvOpen?'<polyline points="18 15 12 9 6 15"/>':'<polyline points="6 9 12 15 18 9"/>';
+    _cvOpen=!_cvOpen;
+    const d=document.getElementById('cv-details'),i=document.getElementById('cv-toggle-icon');
+    if(d)d.style.display=_cvOpen?'':'none';
+    if(i)i.innerHTML=_cvOpen?'<polyline points="18 15 12 9 6 15"/>':'<polyline points="6 9 12 15 18 9"/>';
 }
-function editActiveCustomer()   { if(activeCustomer) openCustomerModal(activeCustomer); }
+function editActiveCustomer()  { if(activeCustomer)openCustomerModal(activeCustomer); }
 async function deleteActiveCustomer() {
-    if(!activeCustomer||!confirm(`წაშლა: "${activeCustomer.name}"?`)) return;
+    if(!activeCustomer||!confirm(`წაშლა: "${activeCustomer.name}"?`))return;
     const {error}=await _supabase.from('customers').delete().eq('id',activeCustomer.id);
-    if(!error) showCustomers(); else alert('შეცდ: '+error.message);
+    if(!error)showCustomers();else alert('შეცდ: '+error.message);
 }
 
 /* nav helpers */
-function showCustomers() {
-    document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));
-    document.getElementById('customer-view').classList.add('active');
-    _hideBreadcrumb();
-    loadCustomers();
-}
-function showBranches() {
-    document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));
-    document.getElementById('branch-view').classList.add('active');
-}
-function showAssets() {
-    document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));
-    document.getElementById('asset-view').classList.add('active');
-}
-function viewAssets(b) {
-    activeBranch = b;
+function showCustomers(){document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));document.getElementById('customer-view').classList.add('active');_hideBreadcrumb();loadCustomers();}
+function showBranches(){document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));document.getElementById('branch-view').classList.add('active');}
+function showAssets(){document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));document.getElementById('asset-view').classList.add('active');}
+function viewAssets(b){
+    activeBranch=b;
     if(typeof loadAssetView==='function'){loadAssetView(b);return;}
     document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));
     document.getElementById('asset-view').classList.add('active');
     document.getElementById('asset-view-title').innerText=b.name;
     loadAssets();
 }
-async function viewServiceLogs(asset) {
+async function viewServiceLogs(asset){
     activeAsset=asset;
     document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));
     document.getElementById('service-logs-view').classList.add('active');
@@ -224,32 +201,26 @@ async function viewServiceLogs(asset) {
 /* ══════════════════════════════════════════════════════════════
    switchBranchTab
    ══════════════════════════════════════════════════════════════ */
-function switchBranchTab(name, btn) {
-    document.querySelectorAll('#branch-view .flex.gap-1 button').forEach(b=>{
-        b.classList.remove('bg-white','text-slate-900','shadow-sm');
-        b.classList.add('text-slate-400');
-    });
+function switchBranchTab(name,btn){
+    document.querySelectorAll('#branch-view .flex.gap-1 button').forEach(b=>{b.classList.remove('bg-white','text-slate-900','shadow-sm');b.classList.add('text-slate-400');});
     document.querySelectorAll('.branch-panel').forEach(p=>p.classList.add('hidden'));
     if(btn){btn.classList.add('bg-white','text-slate-900','shadow-sm');btn.classList.remove('text-slate-400');}
     const panel=document.getElementById(`panel-${name}`);
-    if(panel) panel.classList.remove('hidden');
-    if(name==='overview') loadOverviewTab();
-    if(name==='map')      loadLiveMapTab();
-    if(name==='branches') loadBranches();
-    if(name==='assets')   loadAllAssets();
-    if(name==='services') loadAllServices();
+    if(panel)panel.classList.remove('hidden');
+    if(name==='overview')loadOverviewTab();
+    if(name==='map')     loadLiveMapTab();
+    if(name==='branches')loadBranches();
+    if(name==='assets')  loadAllAssets();
+    if(name==='services')loadAllServices();
 }
 
 /* ══════════════════════════════════════════════════════════════
-   FIX 1: OVERVIEW TAB — სწორი join სინტაქსი
+   FIX 1: OVERVIEW TAB — branch_id IN (...) query
    ══════════════════════════════════════════════════════════════ */
-async function loadOverviewTab() {
+async function loadOverviewTab(){
     if(overviewMap){overviewMap.remove();overviewMap=null;}
-
     const {data:branches}=await _supabase.from('branches').select('*').eq('customer_id',activeCustomer.id);
     _overviewBranches=branches||[];
-
-    /* map */
     setTimeout(()=>{
         const md=document.getElementById('overview-map-container');if(!md)return;
         overviewMap=L.map('overview-map-container',{zoomControl:true,attributionControl:false}).setView([41.7151,44.8271],11);
@@ -257,33 +228,30 @@ async function loadOverviewTab() {
         if(_overviewBranches.length){
             const mk=[];
             _overviewBranches.forEach(b=>{
-                if(b.lat&&b.lng){
-                    const m=L.marker([b.lat,b.lng]).addTo(overviewMap);
-                    m.bindPopup(`<b>${b.name}</b><br>${b.address||''}`);
-                    m.on('click',()=>viewBranchDashboard(b));
-                    mk.push(m);
-                }
+                if(b.lat&&b.lng){const m=L.marker([b.lat,b.lng]).addTo(overviewMap);m.bindPopup(`<b>${b.name}</b><br>${b.address||''}`);m.on('click',()=>viewBranchDashboard(b));mk.push(m);}
             });
-            if(mk.length) overviewMap.fitBounds(new L.featureGroup(mk).getBounds().pad(0.3));
+            if(mk.length)overviewMap.fitBounds(new L.featureGroup(mk).getBounds().pad(0.3));
         }
         overviewMap.invalidateSize();
     },300);
 
-    /* FIX 1 — სწორი join: branch_id + customer_id, assets ცალკე */
-    const {data:svc,error:svcErr}=await _supabase.from('service_logs')
-        .select('id,service_date,service_type,technician_name,branch_id,asset_id,job_description,branches(name)')
-        .eq('customer_id',activeCustomer.id)
-        .order('service_date',{ascending:false})
-        .limit(5);
-
-    /* asset names ცალკე (schema cache issue workaround) */
-    let svcWithAssets = svc || [];
-    if (svc && svc.length) {
-        const assetIds = [...new Set(svc.map(s=>s.asset_id).filter(Boolean))];
-        if (assetIds.length) {
-            const {data:assetNames}=await _supabase.from('assets').select('id,name').in('id',assetIds);
-            const assetMap = Object.fromEntries((assetNames||[]).map(a=>[a.id,a.name]));
-            svcWithAssets = svc.map(s=>({...s, _assetName: assetMap[s.asset_id]||'—'}));
+    /* FIX 1 — branch_id IN (...) გამოვიყენოთ customer_id-ის ნაცვლად */
+    const branchIds=(_overviewBranches).map(b=>b.id);
+    let svcWithAssets=[];
+    if(branchIds.length){
+        const {data:svc}=await _supabase.from('service_logs')
+            .select('id,service_date,service_type,technician_name,branch_id,asset_id,job_description')
+            .in('branch_id',branchIds)
+            .order('service_date',{ascending:false})
+            .limit(5);
+        if(svc&&svc.length){
+            /* branch names */
+            const brMap=Object.fromEntries(_overviewBranches.map(b=>[b.id,b.name]));
+            /* asset names */
+            const aIds=[...new Set(svc.map(s=>s.asset_id).filter(Boolean))];
+            let aMap={};
+            if(aIds.length){const {data:an}=await _supabase.from('assets').select('id,name').in('id',aIds);aMap=Object.fromEntries((an||[]).map(a=>[a.id,a.name]));}
+            svcWithAssets=svc.map(s=>({...s,_brName:brMap[s.branch_id]||'—',_asName:aMap[s.asset_id]||'—'}));
         }
     }
 
@@ -300,7 +268,7 @@ async function loadOverviewTab() {
                             <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${tc[s.service_type]||'bg-slate-100 text-slate-500'}">${s.service_type||'—'}</span>
                             <span class="text-xs text-slate-700 font-medium truncate">${s.technician_name||'—'}</span>
                         </div>
-                        <div class="text-[10px] text-slate-400 truncate">${s.branches?.name||''} · ${s._assetName||'—'}</div>
+                        <div class="text-[10px] text-slate-400 truncate">${s._brName} · ${s._asName}</div>
                     </div>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" class="flex-shrink-0 mt-1"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>`).join('');
@@ -309,43 +277,33 @@ async function loadOverviewTab() {
         }
     }
 
-    /* branch list */
     _renderOverviewBranchList(_overviewBranches);
     _injectOverviewBranchToolbar();
 }
 
-/* overview branch toolbar */
-function _injectOverviewBranchToolbar() {
+function _injectOverviewBranchToolbar(){
     const blEl=document.getElementById('overview-branches-list');if(!blEl)return;
     let tb=document.getElementById('overview-br-toolbar');
     if(!tb){tb=document.createElement('div');tb.id='overview-br-toolbar';tb.className='flex items-center gap-2 mb-3 flex-wrap';blEl.parentNode.insertBefore(tb,blEl);}
     tb.innerHTML=`
-        <input type="text" id="ovbr-search" placeholder="ძებნა..."
-            oninput="_filterOverviewBranches()"
+        <input type="text" id="ovbr-search" placeholder="ძებნა..." oninput="_filterOverviewBranches()"
             class="flex-1 min-w-[100px] text-xs border border-slate-200 rounded-xl px-2.5 py-1 bg-slate-50 text-slate-600">
-        <select id="ovbr-status" onchange="_filterOverviewBranches()"
-            class="text-xs border border-slate-200 rounded-xl px-2.5 py-1 bg-slate-50 text-slate-600">
-            <option value="">ყველა</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+        <select id="ovbr-status" onchange="_filterOverviewBranches()" class="text-xs border border-slate-200 rounded-xl px-2.5 py-1 bg-slate-50 text-slate-600">
+            <option value="">ყველა</option><option value="active">Active</option><option value="inactive">Inactive</option>
         </select>
-        <select id="ovbr-sort" onchange="_filterOverviewBranches()"
-            class="text-xs border border-slate-200 rounded-xl px-2.5 py-1 bg-slate-50 text-slate-600">
-            <option value="default">სტანდ.</option>
-            <option value="name_asc">A→Z</option>
-            <option value="name_desc">Z→A</option>
-            <option value="size_desc">ზომა ↓</option>
-            <option value="priority">პრიორ.</option>
+        <select id="ovbr-sort" onchange="_filterOverviewBranches()" class="text-xs border border-slate-200 rounded-xl px-2.5 py-1 bg-slate-50 text-slate-600">
+            <option value="default">სტანდ.</option><option value="name_asc">A→Z</option><option value="name_desc">Z→A</option>
+            <option value="size_desc">ზომა ↓</option><option value="priority">პრიორ.</option>
         </select>`;
 }
-function _filterOverviewBranches() {
+function _filterOverviewBranches(){
     const search=(document.getElementById('ovbr-search')?.value||'').toLowerCase();
     const status=document.getElementById('ovbr-status')?.value||'';
     const sort  =document.getElementById('ovbr-sort')?.value||'default';
     let d=[..._overviewBranches];
-    if(search) d=d.filter(b=>(b.name||'').toLowerCase().includes(search)||(b.address||'').toLowerCase().includes(search));
-    if(status==='active')   d=d.filter(b=>b.is_active);
-    if(status==='inactive') d=d.filter(b=>!b.is_active);
+    if(search)d=d.filter(b=>(b.name||'').toLowerCase().includes(search)||(b.address||'').toLowerCase().includes(search));
+    if(status==='active')  d=d.filter(b=>b.is_active);
+    if(status==='inactive')d=d.filter(b=>!b.is_active);
     const po={Critical:0,High:1,Standard:2,Low:3};
     if(sort==='name_asc')  d.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
     if(sort==='name_desc') d.sort((a,b)=>(b.name||'').localeCompare(a.name||''));
@@ -353,7 +311,7 @@ function _filterOverviewBranches() {
     if(sort==='priority')  d.sort((a,b)=>(po[a.service_priority]??9)-(po[b.service_priority]??9));
     _renderOverviewBranchList(d);
 }
-function _renderOverviewBranchList(data) {
+function _renderOverviewBranchList(data){
     const blEl=document.getElementById('overview-branches-list');if(!blEl)return;
     if(!data.length){blEl.innerHTML='<div class="text-xs text-slate-300 italic text-center py-4">ვ/მ</div>';return;}
     const prC={Critical:'bg-red-100 text-red-700',High:'bg-amber-100 text-amber-700',Standard:'bg-green-100 text-green-700',Low:'bg-slate-100 text-slate-500'};
@@ -373,11 +331,11 @@ function _renderOverviewBranchList(data) {
         </div>`).join('');
 }
 
-async function _openSvcDetail(s) {
+async function _openSvcDetail(s){
     const {data:br}=await _supabase.from('branches').select('*').eq('id',s.branch_id).single().catch(()=>({data:null}));
     const {data:as}=await _supabase.from('assets').select('*').eq('id',s.asset_id).single().catch(()=>({data:null}));
-    if(br) activeBranch=br;
-    activeAsset=as||{id:s.asset_id,name:s._assetName||'სერვ.'};
+    if(br)activeBranch=br;
+    activeAsset=as||{id:s.asset_id,name:s._asName||'სერვ.'};
     document.querySelectorAll('.view-section').forEach(sec=>sec.classList.remove('active'));
     document.getElementById('service-logs-view').classList.add('active');
     document.getElementById('service-view-title').innerText=activeAsset.name||'სერვ.';
@@ -387,7 +345,7 @@ async function _openSvcDetail(s) {
 /* ══════════════════════════════════════════════════════════════
    LIVE MAP
    ══════════════════════════════════════════════════════════════ */
-async function loadLiveMapTab() {
+async function loadLiveMapTab(){
     if(typeof liveMap!=='undefined'&&liveMap){liveMap.remove();liveMap=null;}
     const {data:branches}=await _supabase.from('branches').select('*').eq('customer_id',activeCustomer.id);
     const {data:assets}  =await _supabase.from('assets').select('branch_id').eq('customer_id',activeCustomer.id);
@@ -407,7 +365,7 @@ async function loadLiveMapTab() {
             }
         });
         liveMap.addLayer(cls);
-        if(cls.getLayers().length) liveMap.fitBounds(cls.getBounds().pad(0.2));
+        if(cls.getLayers().length)liveMap.fitBounds(cls.getBounds().pad(0.2));
         liveMap.invalidateSize();
     },400);
 }
@@ -415,7 +373,7 @@ async function loadLiveMapTab() {
 /* ══════════════════════════════════════════════════════════════
    BRANCHES TAB
    ══════════════════════════════════════════════════════════════ */
-async function loadBranches() {
+async function loadBranches(){
     const {data,error}=await _supabase.from('branches').select('*').eq('customer_id',activeCustomer.id).order('created_at');
     if(error)return;
     _branchesData=data||[];
@@ -429,7 +387,7 @@ async function loadBranches() {
     _setupBranchRT();
 }
 
-function _injectBranchToolbar() {
+function _injectBranchToolbar(){
     const cont=document.getElementById('branches-list');if(!cont)return;
     let tb=document.getElementById('branches-toolbar');
     if(!tb){tb=document.createElement('div');tb.id='branches-toolbar';cont.parentNode.insertBefore(tb,cont);}
@@ -453,17 +411,16 @@ function _injectBranchToolbar() {
         </button>
         <span id="br-count" class="text-[10px] text-slate-400 ml-auto"></span>`;
 }
-
-function _filterBranches() {
-    const search  =(document.getElementById('br-search')?.value||'').toLowerCase();
-    const status  =document.getElementById('br-status')?.value||'';
+function _filterBranches(){
+    const search=(document.getElementById('br-search')?.value||'').toLowerCase();
+    const status=document.getElementById('br-status')?.value||'';
     const priority=document.getElementById('br-priority')?.value||'';
-    const sort    =document.getElementById('br-sort')?.value||'created_at';
+    const sort=document.getElementById('br-sort')?.value||'created_at';
     let d=[..._branchesData];
-    if(search)    d=d.filter(b=>(b.name||'').toLowerCase().includes(search)||(b.address||'').toLowerCase().includes(search)||(b.contact_person||'').toLowerCase().includes(search));
-    if(status==='active')   d=d.filter(b=>b.is_active);
-    if(status==='inactive') d=d.filter(b=>!b.is_active);
-    if(priority)  d=d.filter(b=>b.service_priority===priority);
+    if(search)d=d.filter(b=>(b.name||'').toLowerCase().includes(search)||(b.address||'').toLowerCase().includes(search)||(b.contact_person||'').toLowerCase().includes(search));
+    if(status==='active')  d=d.filter(b=>b.is_active);
+    if(status==='inactive')d=d.filter(b=>!b.is_active);
+    if(priority)d=d.filter(b=>b.service_priority===priority);
     const po={Critical:0,High:1,Standard:2,Low:3};
     if(sort==='name_asc')  d.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
     if(sort==='name_desc') d.sort((a,b)=>(b.name||'').localeCompare(a.name||''));
@@ -471,12 +428,10 @@ function _filterBranches() {
     if(sort==='size_asc')  d.sort((a,b)=>(a.square_meters||0)-(b.square_meters||0));
     if(sort==='priority')  d.sort((a,b)=>(po[a.service_priority]??9)-(po[b.service_priority]??9));
     if(sort==='updated')   d.sort((a,b)=>new Date(b.updated_at||0)-new Date(a.updated_at||0));
-    const cnt=document.getElementById('br-count');
-    if(cnt) cnt.textContent=`${d.length} / ${_branchesData.length} ფილ.`;
+    const cnt=document.getElementById('br-count');if(cnt)cnt.textContent=`${d.length}/${_branchesData.length} ფილ.`;
     _renderBranches(d);
 }
-
-function _renderBranches(data) {
+function _renderBranches(data){
     const cont=document.getElementById('branches-list');if(!cont)return;
     if(!data.length){cont.innerHTML='<div class="text-xs text-slate-300 text-center py-8 italic">ვ/მ</div>';return;}
     const now=Date.now();
@@ -508,31 +463,24 @@ function _renderBranches(data) {
                         ${b.address||'—'}${b.square_meters?' · '+b.square_meters+' m²':''}
                     </p>
                     <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-[11px] text-slate-400">
-                        <div>ელ-კვება: <span class="text-slate-700 font-bold">${b.power_supply_type||'—'}</span></div>
+                        <div>ელ-კვ.: <span class="text-slate-700 font-bold">${b.power_supply_type||'—'}</span></div>
                         <div>ფართი: <span class="text-slate-700 font-bold">${b.square_meters?b.square_meters+' m²':'—'}</span></div>
                         <div>მენ.: <span class="text-slate-700 font-bold">${b.contact_person||'—'}</span></div>
                         <div>ტელ.: <span class="text-slate-700 font-bold">${b.contact_phone||'—'}</span></div>
                     </div>
                 </div>
                 <div class="flex gap-2 mt-3">
-                    <button onclick='event.stopPropagation();viewAssets(${bJ})'
-                        class="flex-1 bg-slate-900 text-white text-[10px] font-bold py-2 rounded-xl hover:bg-blue-600 transition">
-                        აგრ. →
-                    </button>
-                    <button onclick='event.stopPropagation();deleteData("branches","${b.id}")'
-                        class="px-3 py-2 rounded-xl border border-red-100 text-red-400 hover:bg-red-50 transition">
+                    <button onclick='event.stopPropagation();viewAssets(${bJ})' class="flex-1 bg-slate-900 text-white text-[10px] font-bold py-2 rounded-xl hover:bg-blue-600 transition">აგრ. →</button>
+                    <button onclick='event.stopPropagation();deleteData("branches","${b.id}")' class="px-3 py-2 rounded-xl border border-red-100 text-red-400 hover:bg-red-50 transition">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                     </button>
                 </div>
             </div>
         </div>`}).join('');
-    data.forEach((b,i)=>{
-        if(b.lat&&b.lng){try{const m=L.map(`bmap-${i}`,{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false}).setView([b.lat,b.lng],15);L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(m);L.marker([b.lat,b.lng]).addTo(m);}catch(e){}}
-    });
+    data.forEach((b,i)=>{if(b.lat&&b.lng){try{const m=L.map(`bmap-${i}`,{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false}).setView([b.lat,b.lng],15);L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(m);L.marker([b.lat,b.lng]).addTo(m);}catch(e){}}});
     lucide.createIcons();
 }
-
-function _setupBranchRT() {
+function _setupBranchRT(){
     if(_branchRT){try{_supabase.removeChannel(_branchRT);}catch(e){}}
     _branchRT=_supabase.channel('br-rt-'+activeCustomer.id)
         .on('postgres_changes',{event:'*',schema:'public',table:'branches',filter:`customer_id=eq.${activeCustomer.id}`},
@@ -545,37 +493,29 @@ function _setupBranchRT() {
             _filterBranches();
         }).subscribe();
 }
-
-function exportBranchesExcel() {
+function exportBranchesExcel(){
     if(!_branchesData.length){alert('ჩატვ. მონ.');return;}
     const hdr=['სახ.','მისამ.','სტ.','პრიორ.','ფართი m²','ელ-კვ.','კონტ.','ტელ.','SLA','სიხ.','შეიქ.','განახ.'];
-    const rows=[hdr,..._branchesData.map(b=>[
-        b.name||'',b.address||'',b.is_active?'Active':'Inactive',b.service_priority||'',
-        b.square_meters||'',b.power_supply_type||'',b.contact_person||'',b.contact_phone||'',
-        b.sla_response_hours?b.sla_response_hours+'h':'',b.service_frequency||'',
-        b.created_at?new Date(b.created_at).toLocaleDateString('ka-GE'):'',
-        b.updated_at?new Date(b.updated_at).toLocaleDateString('ka-GE'):'',
-    ])];
+    const rows=[hdr,..._branchesData.map(b=>[b.name||'',b.address||'',b.is_active?'Active':'Inactive',b.service_priority||'',b.square_meters||'',b.power_supply_type||'',b.contact_person||'',b.contact_phone||'',b.sla_response_hours?b.sla_response_hours+'h':'',b.service_frequency||'',b.created_at?new Date(b.created_at).toLocaleDateString('ka-GE'):'',b.updated_at?new Date(b.updated_at).toLocaleDateString('ka-GE'):''])];
     const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
     const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
     const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download=`branches_${activeCustomer?.name||'export'}_${new Date().toISOString().slice(0,10)}.csv`;a.click();
-    URL.revokeObjectURL(url);
+    const a=document.createElement('a');a.href=url;a.download=`branches_${activeCustomer?.name||'export'}_${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);
 }
 
 /* ══════════════════════════════════════════════════════════════
-   FIX 4: ASSETS TAB — _openAssetFromTable → branch dashboard
+   FIX 2: ASSETS TAB — row click → loadAssetView(branch) + filter by asset
    ══════════════════════════════════════════════════════════════ */
-async function loadAllAssets() {
+async function loadAllAssets(){
     if(!activeCustomer)return;
     const bF=document.getElementById('assets-filter-branch')?.value||'';
     const cont=document.getElementById('all-assets-table');
-    if(cont) cont.innerHTML='<div class="text-xs text-slate-300 italic text-center py-8">იტვ...</div>';
-    let q=_supabase.from('assets').select('id,name,asset_type,asset_class,brand,model,tag_number,status,condition_score,last_service_date,branch_id,branches(name,id)').eq('customer_id',activeCustomer.id);
-    if(bF) q=q.eq('branch_id',bF);
+    if(cont)cont.innerHTML='<div class="text-xs text-slate-300 italic text-center py-8">იტვ...</div>';
+    let q=_supabase.from('assets').select('id,name,asset_type,asset_class,brand,model,tag_number,status,condition_score,last_service_date,branch_id,branches(name,id,lat,lng,is_active,image_url,address,contact_person,contact_phone,power_supply_type,square_meters,service_priority,sla_response_hours,service_frequency,contract_end,building_type,floor_zone,working_hours,access_code,parking_details,emergency_contact,emergency_phone,after_hours_contact,after_hours_phone,contract_type,contract_start,notes,created_at,updated_at,branch_type,year_built,refrigeration_type)').eq('customer_id',activeCustomer.id);
+    if(bF)q=q.eq('branch_id',bF);
     q=q.order('name');
     const {data,error}=await q;
-    if(error||!cont){if(error)console.error('assets error',error);return;}
+    if(error||!cont){if(error)console.error(error);return;}
     if(!data?.length){cont.innerHTML='<div class="text-xs text-slate-300 italic text-center py-10">ვ/მ</div>';return;}
     const sC={Operational:'bg-green-100 text-green-700',Maintenance_Required:'bg-amber-100 text-amber-700',Down:'bg-red-100 text-red-700'};
     const sL={Operational:'OK',Maintenance_Required:'Maint.',Down:'Down'};
@@ -598,20 +538,31 @@ async function loadAllAssets() {
         <td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${sC[a.status]||'bg-slate-100 text-slate-500'}">${sL[a.status]||a.status}</span></td>
         <td class="py-2.5 px-2 text-slate-400">${a.last_service_date?new Date(a.last_service_date).toLocaleDateString('ka-GE',{day:'2-digit',month:'short',year:'numeric'}):'—'}</td>
     </tr>`).join('')}
-    </tbody></table>`;
+    </tbody></table>
+    <div class="mt-3 flex justify-end">
+        <button onclick="exportAllAssetsExcel()" class="text-xs font-bold text-green-600 border border-green-200 px-3 py-1.5 rounded-xl hover:bg-green-50 transition flex items-center gap-1">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Excel ექსპ.
+        </button>
+    </div>`;
+    /* cache for export */
+    window._allAssetsCache = data;
 }
 
-async function _openAssetFromTable(a) {
-    const {data:branch}=await _supabase.from('branches').select('*').eq('id',a.branch_id).single().catch(()=>({data:null}));
-    if(!branch){alert('ფილიალი ვ/მ');return;}
+/* FIX 2 — asset row click → branch dashboard → assets tab → specific asset */
+async function _openAssetFromTable(a){
+    /* branch ობიექტი (branches nested-ია select-ში) */
+    const branch = a.branches || null;
+    if(!branch){alert('ფილ. ვ/მ');return;}
     activeBranch=branch;
     window._nav.branch=branch;
     _renderBreadcrumb();
+    window._pendingAssetId = a.id; /* asset_view.js-ისთვის */
     if(typeof _doViewBranchDashboard==='function'){
         _doViewBranchDashboard(branch);
         setTimeout(()=>{
             const assetsBtn=[...document.querySelectorAll('#bdc-nav .bdc-tab')].find(t=>t.textContent.trim().includes('აგრეგ'));
-            if(assetsBtn) switchBdcTab('assets',assetsBtn);
+            if(assetsBtn)switchBdcTab('assets',assetsBtn);
         },350);
     }
 }
@@ -625,43 +576,56 @@ function viewServiceFromTable(log){
     loadServiceLogs();
 }
 
+/* FIX 7: export all assets Excel */
+function exportAllAssetsExcel(){
+    const data=window._allAssetsCache;
+    if(!data?.length){alert('ჯერ ჩატვ.');return;}
+    const hdr=['სახ.','ტიპი','კლასი','ბრენდი','მოდ.','TAG','ფილ.','სტ.','Cond.','სიმძლ.kW','საფ.','ბ.სერვ.'];
+    const rows=[hdr,...data.map(a=>[a.name||'',a.asset_type||'',a.asset_class||'',a.brand||'',a.model||'',a.tag_number||'',a.branches?.name||'',a.status||'',a.condition_score||'',a.cooling_capacity_kw||'',a.refrigerant_type||'',a.last_service_date?new Date(a.last_service_date).toLocaleDateString('ka-GE'):'' ])];
+    const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a2=document.createElement('a');a2.href=url;a2.download=`assets_${activeCustomer?.name||'export'}_${new Date().toISOString().slice(0,10)}.csv`;a2.click();URL.revokeObjectURL(url);
+}
+
 /* ══════════════════════════════════════════════════════════════
-   FIX 2/5: SERVICES TAB — assets ცალკე query (schema cache fix)
+   FIX 1: SERVICES TAB — branch_id IN (...)
    ══════════════════════════════════════════════════════════════ */
-async function loadAllServices() {
+async function loadAllServices(){
     if(!activeCustomer)return;
     const tF=document.getElementById('services-filter-type')?.value||'';
     const bF=document.getElementById('services-filter-branch')?.value||'';
     const cont=document.getElementById('all-services-table');
-    if(cont) cont.innerHTML='<div class="text-xs text-slate-300 italic text-center py-8">იტვ...</div>';
+    if(cont)cont.innerHTML='<div class="text-xs text-slate-300 italic text-center py-8">იტვ...</div>';
 
-    /* FIX 2: assets join-ის ნაცვლად ცალკე query */
+    /* FIX 1 — branch_id IN */
+    const {data:branches}=await _supabase.from('branches').select('id,name').eq('customer_id',activeCustomer.id);
+    const allBranchIds=(branches||[]).map(b=>b.id);
+    const brMap=Object.fromEntries((branches||[]).map(b=>[b.id,b.name]));
+
+    let branchIds=allBranchIds;
+    if(bF)branchIds=[bF];
+    if(!branchIds.length){if(cont)cont.innerHTML='<div class="text-xs text-slate-300 italic text-center py-10">ვ/მ</div>';return;}
+
     let q=_supabase.from('service_logs')
-        .select('id,service_date,service_type,technician_name,job_description,branch_id,asset_id,branches(name)')
-        .eq('customer_id',activeCustomer.id)
+        .select('id,service_date,service_type,technician_name,job_description,branch_id,asset_id')
+        .in('branch_id',branchIds)
         .order('service_date',{ascending:false});
-    if(tF) q=q.eq('service_type',tF);
-    if(bF) q=q.eq('branch_id',bF);
+    if(tF)q=q.eq('service_type',tF);
 
     const {data,error}=await q;
     if(!cont)return;
-    if(error){
-        cont.innerHTML=`<div class="text-xs text-red-400 italic text-center py-8">შეცდ: ${error.message}</div>`;
-        console.error('services error',error);
-        return;
-    }
+    if(error){cont.innerHTML=`<div class="text-xs text-red-400 italic text-center py-8">შეცდ: ${error.message}</div>`;return;}
     if(!data?.length){cont.innerHTML='<div class="text-xs text-slate-300 italic text-center py-10">სერვ. ჩანაწ. ვ/მ</div>';return;}
 
-    /* asset names ცალკე */
-    const assetIds=[...new Set(data.map(s=>s.asset_id).filter(Boolean))];
-    let assetMap={};
-    if(assetIds.length){
-        const {data:an}=await _supabase.from('assets').select('id,name').in('id',assetIds);
-        assetMap=Object.fromEntries((an||[]).map(a=>[a.id,a.name]));
-    }
-    const enriched=data.map(s=>({...s,_assetName:assetMap[s.asset_id]||'—',_branchName:s.branches?.name||'—'}));
+    /* asset names */
+    const aIds=[...new Set(data.map(s=>s.asset_id).filter(Boolean))];
+    let aMap={};
+    if(aIds.length){const {data:an}=await _supabase.from('assets').select('id,name').in('id',aIds);aMap=Object.fromEntries((an||[]).map(a=>[a.id,a.name]));}
 
+    const enriched=data.map(s=>({...s,_assetName:aMap[s.asset_id]||'—',_branchName:brMap[s.branch_id]||'—'}));
     const tc={PPM:'bg-blue-100 text-blue-700',Corrective:'bg-amber-100 text-amber-700',Emergency:'bg-red-100 text-red-700',Installation:'bg-green-100 text-green-700',Repair:'bg-purple-100 text-purple-700'};
+
     cont.innerHTML=`<table class="w-full text-xs border-collapse">
     <thead><tr class="border-b border-slate-100">
         <th class="text-left font-medium text-slate-400 py-2 px-2">თარ.</th>
@@ -670,15 +634,96 @@ async function loadAllServices() {
         <th class="text-left font-medium text-slate-400 py-2 px-2">ფილ.</th>
         <th class="text-left font-medium text-slate-400 py-2 px-2">აგრ.</th>
         <th class="text-left font-medium text-slate-400 py-2 px-2">სამ. აღწ.</th>
+        <th class="text-left font-medium text-slate-400 py-2 px-2">PDF</th>
     </tr></thead>
     <tbody>${enriched.map(s=>`
-    <tr class="border-b border-slate-50 hover:bg-slate-50 cursor-pointer" onclick='viewServiceFromTable(${JSON.stringify(s)})'>
-        <td class="py-2.5 px-2 text-slate-500 whitespace-nowrap">${new Date(s.service_date).toLocaleDateString('ka-GE',{day:'2-digit',month:'short',year:'numeric'})}</td>
-        <td class="py-2.5 px-2 font-medium text-slate-800">${s.technician_name||'—'}</td>
-        <td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${tc[s.service_type]||'bg-slate-100 text-slate-500'}">${s.service_type||'—'}</span></td>
-        <td class="py-2.5 px-2 text-slate-500">${s._branchName}</td>
-        <td class="py-2.5 px-2 text-slate-500">${s._assetName}</td>
-        <td class="py-2.5 px-2 text-slate-400 truncate max-w-[200px]">${s.job_description?s.job_description.substring(0,50)+'...':'—'}</td>
+    <tr class="border-b border-slate-50 hover:bg-slate-50 cursor-pointer">
+        <td class="py-2.5 px-2 text-slate-500 whitespace-nowrap" onclick='viewServiceFromTable(${JSON.stringify(s)})'>${new Date(s.service_date).toLocaleDateString('ka-GE',{day:'2-digit',month:'short',year:'numeric'})}</td>
+        <td class="py-2.5 px-2 font-medium text-slate-800" onclick='viewServiceFromTable(${JSON.stringify(s)})'>${s.technician_name||'—'}</td>
+        <td class="py-2.5 px-2" onclick='viewServiceFromTable(${JSON.stringify(s)})'><span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${tc[s.service_type]||'bg-slate-100 text-slate-500'}">${s.service_type||'—'}</span></td>
+        <td class="py-2.5 px-2 text-slate-500" onclick='viewServiceFromTable(${JSON.stringify(s)})'>${s._branchName}</td>
+        <td class="py-2.5 px-2 text-slate-500" onclick='viewServiceFromTable(${JSON.stringify(s)})'>${s._assetName}</td>
+        <td class="py-2.5 px-2 text-slate-400 truncate max-w-[160px]" onclick='viewServiceFromTable(${JSON.stringify(s)})'>${s.job_description?s.job_description.substring(0,50)+'...':'—'}</td>
+        <td class="py-2.5 px-2">
+            <button onclick='exportServicePDF(${JSON.stringify(s)})' class="text-[9px] font-bold text-red-600 border border-red-200 px-2 py-1 rounded-lg hover:bg-red-50 transition">PDF</button>
+        </td>
     </tr>`).join('')}
     </tbody></table>`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FIX 6+7: PDF EXPORT ფუნქციები
+   ══════════════════════════════════════════════════════════════ */
+function exportServicePDF(log){
+    const w=window.open('','_blank');
+    const date=new Date(log.service_date).toLocaleDateString('ka-GE',{day:'2-digit',month:'long',year:'numeric'});
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>body{font-family:Arial,sans-serif;padding:30px;color:#1a1a1a;max-width:800px;margin:0 auto}
+    h1{font-size:22px;margin-bottom:4px;color:#0f172a}
+    .sub{color:#64748b;font-size:12px;margin-bottom:24px}
+    table{width:100%;border-collapse:collapse;margin-bottom:20px}
+    th{background:#f8fafc;text-align:left;padding:8px 10px;font-size:11px;color:#64748b;border:1px solid #e2e8f0}
+    td{padding:8px 10px;font-size:12px;border:1px solid #e2e8f0}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;background:#dbeafe;color:#1e40af}
+    .section{margin-bottom:20px}
+    .section-title{font-size:13px;font-weight:bold;color:#374151;border-bottom:2px solid #3b82f6;padding-bottom:4px;margin-bottom:10px}
+    @media print{button{display:none}}</style>
+    </head><body>
+    <h1>სერვისის რეპორტი</h1>
+    <div class="sub">${date} · ${log._branchName||activeBranch?.name||''} · ${log._assetName||activeAsset?.name||''}</div>
+    <div class="section"><div class="section-title">ძირითადი ინფო</div>
+    <table><tr><th>ტექნიკოსი</th><td>${log.technician_name||'—'}</td><th>ტიპი</th><td><span class="badge">${log.service_type||'—'}</span></td></tr>
+    <tr><th>თარიღი</th><td>${date}</td><th>სტ. შემდეგ</th><td>${log.system_status_after||'—'}</td></tr>
+    <tr><th>სამ. აღწ.</th><td colspan="3">${log.job_description||'—'}</td></tr>
+    ${log.recommendations?`<tr><th>რეკომ.</th><td colspan="3">${log.recommendations}</td></tr>`:''}
+    </table></div>
+    ${(log.suction_pressure||log.discharge_pressure||log.superheat||log.subcooling)?`
+    <div class="section"><div class="section-title">სამაცივრო გაზომვები</div>
+    <table><tr><th>LP Bar</th><td>${log.suction_pressure||'—'}</td><th>HP Bar</th><td>${log.discharge_pressure||'—'}</td></tr>
+    <tr><th>T შეწ. °C</th><td>${log.suction_temp||'—'}</td><th>T დაჭ. °C</th><td>${log.discharge_temp||'—'}</td></tr>
+    <tr><th>Superheat K</th><td>${log.superheat||'—'}</td><th>Subcooling K</th><td>${log.subcooling||'—'}</td></tr>
+    <tr><th>კომპ. A</th><td>${log.amp_draw_comp||log.comp_current_a||'—'}</td><th>ფენ. A</th><td>${log.amp_draw_fan||log.fan_current_a||'—'}</td></tr>
+    <tr><th>საფ. დამ. kg</th><td>${log.refrigerant_added_kg||0}</td><th>საფ. ამ. kg</th><td>${log.refrigerant_recovered_kg||0}</td></tr>
+    </table></div>`:''}
+    <div class="section"><div class="section-title">ჩეკლისტი</div>
+    <table>
+    <tr><th>გაჟ. ტესტი</th><td>${log.leak_test_performed?'✓ დიახ':'✗ არა'}</td><th>ფილტრი</th><td>${log.filters_cleaned?'✓ გაიწმ.':'—'}</td></tr>
+    <tr><th>Coil</th><td>${log.coils_cleaned?'✓ გაიწმ.':'—'}</td><th>ელ. კავშ.</th><td>${log.electrical_connections_checked?'✓ OK':'—'}</td></tr>
+    <tr><th>Drain</th><td>${log.drain_checked?'✓ OK':'—'}</td><th>Defrost</th><td>${log.defrost_checked?'✓ OK':'—'}</td></tr>
+    </table></div>
+    <button onclick="window.print()" style="background:#1e40af;color:white;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:13px">ბეჭდვა / PDF</button>
+    </body></html>`);
+    w.document.close();
+}
+
+function exportAssetPDF(a){
+    const w=window.open('','_blank');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>body{font-family:Arial,sans-serif;padding:30px;color:#1a1a1a;max-width:800px;margin:0 auto}
+    h1{font-size:22px;margin-bottom:4px;color:#0f172a}.sub{color:#64748b;font-size:12px;margin-bottom:24px}
+    table{width:100%;border-collapse:collapse;margin-bottom:20px}
+    th{background:#f8fafc;text-align:left;padding:8px 10px;font-size:11px;color:#64748b;border:1px solid #e2e8f0}
+    td{padding:8px 10px;font-size:12px;border:1px solid #e2e8f0}
+    .section{margin-bottom:20px}.section-title{font-size:13px;font-weight:bold;color:#374151;border-bottom:2px solid #3b82f6;padding-bottom:4px;margin-bottom:10px}
+    @media print{button{display:none}}</style></head><body>
+    <h1>${a.name||'—'}</h1>
+    <div class="sub">${a.brand||''} ${a.model||''} · ${a.asset_type||''} · ${a.asset_class||''}</div>
+    <div class="section"><div class="section-title">საიდენტ. მონაცემები</div>
+    <table>
+    <tr><th>TAG</th><td>${a.tag_number||'—'}</td><th>სერ. ნომ.</th><td>${a.serial_number||a.indoor_serial||'—'}</td></tr>
+    <tr><th>ბრენდი</th><td>${a.brand||'—'}</td><th>მოდ. (შიდ)</th><td>${a.indoor_model||a.model||'—'}</td></tr>
+    <tr><th>გამ. წელი</th><td>${a.manufacture_year||'—'}</td><th>მოდ. (გარე)</th><td>${a.outdoor_model||'—'}</td></tr>
+    <tr><th>ინსტ. თარ.</th><td>${a.installation_date||'—'}</td><th>გარანტ.</th><td>${a.warranty_until||'—'}</td></tr>
+    <tr><th>ლოკ.</th><td colspan="3">${a.location_on_site||'—'}</td></tr>
+    </table></div>
+    <div class="section"><div class="section-title">ტექნ. მახასიათ.</div>
+    <table>
+    <tr><th>სიმძლ.</th><td>${a.cooling_capacity_kw?a.cooling_capacity_kw+' kW':'—'}</td><th>მაცივარ.</th><td>${a.refrigerant_type||'—'}</td></tr>
+    <tr><th>საფ. kg</th><td>${a.refrigerant_charge_kg||'—'}</td><th>კვება</th><td>${a.voltage?a.voltage+'V/'+a.phase:'—'}</td></tr>
+    <tr><th>Cond. score</th><td>${a.condition_score||'—'}/10</td><th>სტ.</th><td>${a.status||'—'}</td></tr>
+    <tr><th>ბ. სერვ.</th><td>${a.last_service_date?new Date(a.last_service_date).toLocaleDateString('ka-GE'):'—'}</td><th>სერვ. ინტ.</th><td>${a.service_interval_days?a.service_interval_days+' დღე':'—'}</td></tr>
+    </table></div>
+    <button onclick="window.print()" style="background:#1e40af;color:white;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:13px">ბეჭდვა / PDF</button>
+    </body></html>`);
+    w.document.close();
 }
