@@ -9,7 +9,7 @@
 /* ============================================================
    previewImg(input, previewId)
    ფოტოს ატვირთვამდე პრევიუს ჩვენება ეკრანზე.
-   input     = file input ელემენტი
+   input      = file input ელემენტი
    previewId = <img> ელემენტის id, სადაც ფოტო გამოჩნდება
    ============================================================ */
 function previewImg(input, previewId) {
@@ -301,33 +301,33 @@ async function saveCustomer() {
 
     /* Supabase payload */
     const payload = {
-        name:             name,
-        tax_id:           taxId,
-        customer_type:    isCompany ? 'Company' : 'Person',
-        status:           document.getElementById('c-status').value,
-        industry:         isCompany ? (document.getElementById('c-industry').value     || null) : null,
-        company_size:     isCompany ? (document.getElementById('c-company-size').value  || null) : null,
-        legal_address:    isCompany ? (document.getElementById('c-legal-address').value || null) : null,
-        website:          isCompany ? (document.getElementById('c-website').value        || null) : null,
-        is_vat_payer:     document.getElementById('c-vat').value === 'true',
-        bank_name:        bankName   || null,
-        account_number:   accountNr  || null,
-        actual_address:   addrText   || null,
-        map_url:          document.getElementById('c-map-url').value  || null,
-        lat:              parseFloat(document.getElementById('c-lat').value)  || null,
-        lng:              parseFloat(document.getElementById('c-lng').value)  || null,
+        name:              name,
+        tax_id:            taxId,
+        customer_type:     isCompany ? 'Company' : 'Person',
+        status:            document.getElementById('c-status').value,
+        industry:          isCompany ? (document.getElementById('c-industry').value     || null) : null,
+        company_size:      isCompany ? (document.getElementById('c-company-size').value  || null) : null,
+        legal_address:     isCompany ? (document.getElementById('c-legal-address').value || null) : null,
+        website:           isCompany ? (document.getElementById('c-website').value         || null) : null,
+        is_vat_payer:      document.getElementById('c-vat').value === 'true',
+        bank_name:         bankName   || null,
+        account_number:    accountNr  || null,
+        actual_address:    addrText   || null,
+        map_url:           document.getElementById('c-map-url').value  || null,
+        lat:               parseFloat(document.getElementById('c-lat').value)  || null,
+        lng:               parseFloat(document.getElementById('c-lng').value)  || null,
         contact_person_1: document.getElementById('c-contact1-name').value  || null,
-        position_1:       document.getElementById('c-contact1-pos').value   || null,
-        email_1:          document.getElementById('c-contact1-email').value  || null,
-        phone_1:          document.getElementById('c-contact1-phone').value  || null,
+        position_1:        document.getElementById('c-contact1-pos').value   || null,
+        email_1:           document.getElementById('c-contact1-email').value  || null,
+        phone_1:           document.getElementById('c-contact1-phone').value  || null,
         contact_person_2: document.getElementById('c-contact2-name').value  || null,
-        position_2:       document.getElementById('c-contact2-pos').value   || null,
-        email_2:          document.getElementById('c-contact2-email').value  || null,
-        phone_2:          document.getElementById('c-contact2-phone').value  || null,
-        phone:            document.getElementById('c-phone').value           || null,
+        position_2:        document.getElementById('c-contact2-pos').value   || null,
+        email_2:           document.getElementById('c-contact2-email').value  || null,
+        phone_2:           document.getElementById('c-contact2-phone').value  || null,
+        phone:             document.getElementById('c-phone').value           || null,
         hourly_rate:      parseFloat(document.getElementById('c-rate').value) || 0,
-        notes:            document.getElementById('c-notes').value           || null,
-        image_url:        imageUrl                                            || null,
+        notes:             document.getElementById('c-notes').value           || null,
+        image_url:         imageUrl                                             || null,
     };
 
     /* შენახვა ან განახლება */
@@ -365,7 +365,6 @@ async function loadBranches() {
                     ? `<img src="${b.image_url}" class="w-full h-full object-cover group-hover:scale-110 transition duration-1000">`
                     : `<div class="h-full flex items-center justify-center italic text-slate-300 font-black uppercase tracking-[0.2em] text-[10px]">OB ფოტო არაა</div>`
                 }
-                <!-- მინი-რუკა ბარათის ქვედა ნაწილში -->
                 <div id="map-${i}" class="absolute bottom-8 left-8 right-8 h-40 rounded-[2rem] shadow-2xl border-4 border-white overflow-hidden transition-transform group-hover:translate-y-2"></div>
             </div>
             <div class="p-12 flex-1 flex flex-col">
@@ -446,28 +445,28 @@ async function saveBranch() {
         lng:                  parseFloat(document.getElementById('b-lng').value)  || null,
         floor_zone:           document.getElementById('b-floor-zone').value       || null,
         /* სექცია 3 */
-        power_supply_type:    document.getElementById('b-power').value            || null,
-        refrigeration_type:   document.getElementById('b-refrig').value           || null,
+        power_supply_type:    document.getElementById('b-power').value             || null,
+        refrigeration_type:   document.getElementById('b-refrig').value            || null,
         square_meters:        parseFloat(document.getElementById('b-sqm').value)  || null,
         year_built:           parseInt(document.getElementById('b-year').value)   || null,
-        working_hours:        document.getElementById('b-hours').value            || null,
-        access_code:          document.getElementById('b-access').value           || null,
+        working_hours:        document.getElementById('b-hours').value             || null,
+        access_code:          document.getElementById('b-access').value            || null,
         parking_details:      document.getElementById('b-parking').value          || null,
         /* სექცია 4 */
-        contact_person:       document.getElementById('b-pers').value             || null,
-        contact_phone:        document.getElementById('b-phon').value             || null,
+        contact_person:       document.getElementById('b-pers').value              || null,
+        contact_phone:        document.getElementById('b-phon').value              || null,
         emergency_contact:    document.getElementById('b-emerg-contact').value    || null,
         emergency_phone:      document.getElementById('b-emerg-phone').value      || null,
         after_hours_contact:  document.getElementById('b-after-contact').value    || null,
         after_hours_phone:    document.getElementById('b-after-phone').value      || null,
         /* სექცია 5 */
-        service_frequency:    document.getElementById('b-freq').value             || null,
+        service_frequency:    document.getElementById('b-freq').value              || null,
         contract_type:        document.getElementById('b-contract-type').value    || null,
-        sla_response_hours:   parseInt(document.getElementById('b-sla').value)    || 4,
+        sla_response_hours:   parseInt(document.getElementById('b-sla').value)     || 4,
         contract_start:       document.getElementById('b-contract-start').value   || null,
-        contract_end:         document.getElementById('b-contract-end').value     || null,
+        contract_end:         document.getElementById('b-contract-end').value      || null,
         /* სექცია 6 */
-        notes:                document.getElementById('b-notes').value            || null,
+        notes:                document.getElementById('b-notes').value             || null,
         image_url:            imageUrl,
     };
 
@@ -499,7 +498,8 @@ async function loadAssets() {
     if (error) return;
 
     document.getElementById('assets-list').innerHTML = data.map(a => `
-        <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden group hover:-translate-y-2 transition-all">
+        <div onclick='avOpenAsset(${JSON.stringify(a)})' 
+             class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden group hover:-translate-y-2 transition-all cursor-pointer">
             <div class="h-48 bg-slate-900 relative overflow-hidden">
                 ${a.image_url
                     ? `<img src="${a.image_url}" class="w-full h-full object-cover opacity-80 group-hover:scale-110 transition duration-700">`
@@ -530,7 +530,7 @@ async function loadAssets() {
                     <div class="text-slate-400">სერიული: <span class="text-slate-900 italic text-[9px]">${a.serial_number || '---'}</span></div>
                     <div class="text-slate-400">ელ-კვება: <span class="text-slate-900 italic">${a.voltage || 400}V / ${a.phase || '3'}</span></div>
                 </div>
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-2" onclick="event.stopPropagation()">
                     <button onclick='viewServiceLogs(${JSON.stringify(a)})' class="w-full bg-orange-500 text-white py-4 rounded-2xl text-[9px] font-black uppercase hover:bg-orange-600 transition flex items-center justify-center gap-2 italic shadow-lg shadow-orange-100">
                         სერვისის ისტორია <i data-lucide="history" class="w-4 h-4"></i>
                     </button>
@@ -639,7 +639,6 @@ async function loadServiceLogs() {
 
     document.getElementById('service-logs-list').innerHTML = data.map(log => `
         <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl flex flex-col md:flex-row gap-8 relative group">
-            <!-- თარიღი და ტიპი -->
             <div class="md:w-48 text-center flex flex-col items-center justify-center border-r border-slate-50 pr-8">
                 <span class="text-3xl font-black text-slate-900 italic leading-none">
                     ${new Date(log.service_date).toLocaleDateString('ka-GE', {day:'2-digit', month:'short'})}
@@ -651,7 +650,6 @@ async function loadServiceLogs() {
                     ${log.service_type}
                 </div>
             </div>
-            <!-- სერვის დეტალები -->
             <div class="flex-1">
                 <div class="flex justify-between mb-4">
                     <h4 class="text-xl font-black italic text-slate-800 uppercase tracking-tighter">${log.technician_name}</h4>
@@ -660,14 +658,12 @@ async function loadServiceLogs() {
                     </button>
                 </div>
                 <p class="text-sm text-slate-600 font-medium mb-6 leading-relaxed">${log.job_description}</p>
-                <!-- ზომები (წნევა, ტემპ) -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-[10px] font-black uppercase italic mb-6">
                     <div class="text-blue-500">P-Suc: <span class="text-slate-900">${log.suction_pressure || '-'} Bar</span></div>
                     <div class="text-red-500">P-Dis: <span class="text-slate-900">${log.discharge_pressure || '-'} Bar</span></div>
                     <div class="text-blue-500">T-Suc: <span class="text-slate-900">${log.suction_temp || '-'} °C</span></div>
                     <div class="text-red-500">T-Dis: <span class="text-slate-900">${log.discharge_temp || '-'} °C</span></div>
                 </div>
-                <!-- მედია ფაილები (ფოტო/ვიდეო) -->
                 ${log.media_urls && log.media_urls.length > 0 ? `
                     <div class="flex gap-2 overflow-x-auto pb-2">
                         ${log.media_urls.map(url =>
@@ -693,32 +689,32 @@ async function saveServiceLog() {
     const id = document.getElementById('sl-id').value;
 
     const payload = {
-        asset_id:                        activeAsset.id,
-        branch_id:                       activeBranch.id,
-        technician_name:                 document.getElementById('sl-tech').value,
-        service_date:                    document.getElementById('sl-date').value,
-        service_type:                    document.getElementById('sl-type').value,
-        job_description:                 document.getElementById('sl-desc').value,
-        suction_pressure:                parseFloat(document.getElementById('sl-suction-p').value) || null,
-        discharge_pressure:              parseFloat(document.getElementById('sl-disch-p').value) || null,
-        suction_temp:                    parseFloat(document.getElementById('sl-suction-t').value) || null,
-        discharge_temp:                  parseFloat(document.getElementById('sl-disch-t').value) || null,
-        superheat:                       parseFloat(document.getElementById('sl-sh').value) || null,
-        subcooling:                      parseFloat(document.getElementById('sl-sc').value) || null,
-        ambient_temp:                    parseFloat(document.getElementById('sl-amb').value) || null,
-        voltage_l1_l2:                   parseFloat(document.getElementById('sl-volt').value) || null,
-        amp_draw_comp:                   parseFloat(document.getElementById('sl-amp-comp').value) || null,
-        amp_draw_fan:                    parseFloat(document.getElementById('sl-amp-fan').value) || null,
-        refrigerant_added_kg:            parseFloat(document.getElementById('sl-refr-add').value) || 0,
-        refrigerant_recovered_kg:        parseFloat(document.getElementById('sl-refr-rec').value) || 0,
-        leak_test_performed:             document.getElementById('sl-leak').checked,
-        leak_test_result:                document.getElementById('sl-leak-res').value,
-        filters_cleaned:                 document.getElementById('sl-filter').checked,
-        coils_cleaned:                   document.getElementById('sl-coil').checked,
-        electrical_connections_checked:  document.getElementById('sl-elec').checked,
-        system_status_after:             document.getElementById('sl-status-after').value,
-        recommendations:                 document.getElementById('sl-recom').value,
-        media_urls:                      uploadedMediaUrls
+        asset_id:                         activeAsset.id,
+        branch_id:                        activeBranch.id,
+        technician_name:                  document.getElementById('sl-tech').value,
+        service_date:                     document.getElementById('sl-date').value,
+        service_type:                     document.getElementById('sl-type').value,
+        job_description:                  document.getElementById('sl-desc').value,
+        suction_pressure:                 parseFloat(document.getElementById('sl-suction-p').value) || null,
+        discharge_pressure:               parseFloat(document.getElementById('sl-disch-p').value) || null,
+        suction_temp:                     parseFloat(document.getElementById('sl-suction-t').value) || null,
+        discharge_temp:                   parseFloat(document.getElementById('sl-disch-t').value) || null,
+        superheat:                        parseFloat(document.getElementById('sl-sh').value) || null,
+        subcooling:                       parseFloat(document.getElementById('sl-sc').value) || null,
+        ambient_temp:                     parseFloat(document.getElementById('sl-amb').value) || null,
+        voltage_l1_l2:                    parseFloat(document.getElementById('sl-volt').value) || null,
+        amp_draw_comp:                    parseFloat(document.getElementById('sl-amp-comp').value) || null,
+        amp_draw_fan:                     parseFloat(document.getElementById('sl-amp-fan').value) || null,
+        refrigerant_added_kg:             parseFloat(document.getElementById('sl-refr-add').value) || 0,
+        refrigerant_recovered_kg:         parseFloat(document.getElementById('sl-refr-rec').value) || 0,
+        leak_test_performed:              document.getElementById('sl-leak').checked,
+        leak_test_result:                 document.getElementById('sl-leak-res').value,
+        filters_cleaned:                  document.getElementById('sl-filter').checked,
+        coils_cleaned:                    document.getElementById('sl-coil').checked,
+        electrical_connections_checked:   document.getElementById('sl-elec').checked,
+        system_status_after:              document.getElementById('sl-status-after').value,
+        recommendations:                  document.getElementById('sl-recom').value,
+        media_urls:                       uploadedMediaUrls
     };
 
     const { error } = id
