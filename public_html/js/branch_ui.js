@@ -607,17 +607,9 @@ async function loadAllAssets(){
 
 /* Fix 3: asset row → loadAssetView + breadcrumb */
 async function _openAssetFromTable(a){
-    const branch=a.branches;
-    if(!branch){alert('ფილ. ვ/მ');return;}
-    activeBranch=branch;
-    _setNavBranch(branch);  /* Fix 3 */
-    window._pendingAssetId=a.id;
-    if(typeof _doViewBranchDashboard==='function'){
-        _doViewBranchDashboard(branch);
-        setTimeout(()=>{
-            const btn=[...document.querySelectorAll('#bdc-nav .bdc-tab')].find(t=>t.textContent.trim().includes('აგრეგ'));
-            if(btn)switchBdcTab('assets',btn);
-        },350);
+    const branch = a.branches || activeBranch;
+    if (typeof navigateToAsset === 'function') {
+        navigateToAsset(a, branch);
     }
 }
 function viewAssetFromTable(a){_openAssetFromTable(a);}
