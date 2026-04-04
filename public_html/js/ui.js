@@ -233,3 +233,12 @@ function openServiceLogModal() {
     document.getElementById('sl-media-preview').innerHTML = '';
     document.getElementById('sl-modal').classList.add('active');
 }
+
+function handleAssetClick(assetId) {
+    if (window._av && window._av.branchAssets) {
+        const asset = window._av.branchAssets.find(x => x.id === assetId);
+        if (asset) {
+            avOpenAsset(asset);
+        }
+    }
+}
