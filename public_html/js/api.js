@@ -1,5 +1,8 @@
 /* ============================================================
-   BECOOL CRM — api.js (COMPLETE VERSION)
+   BECOOL CRM — api.js (სრული ვერსია)
+   აქ არის ყველა Supabase-თან კომუნიკაცია:
+   - ფაილების ატვირთვა (Storage)
+   - მონაცემების კითხვა, ჩაწერა, განახლება, წაშლა
    ============================================================ */
 
 function previewImg(input, previewId) {
@@ -21,13 +24,17 @@ async function uploadToStorage(file, folder) {
     if (!file) return null;
     document.getElementById('loader').classList.remove('hidden');
     const fName = `${Date.now()}_${file.name.replace(/\s/g, '_')}`;
-    const { error } = await _supabase.storage.from('assets').upload(`${folder}/${fName}`, file);
+    const { error } = await _supabase.storage
+        .from('assets')
+        .upload(`${folder}/${fName}`, file);
     if (error) {
         alert("Upload error: " + error.message);
         document.getElementById('loader').classList.add('hidden');
         return null;
     }
-    const { data } = _supabase.storage.from('assets').getPublicUrl(`${folder}/${fName}`);
+    const { data } = _supabase.storage
+        .from('assets')
+        .getPublicUrl(`${folder}/${fName}`);
     document.getElementById('loader').classList.add('hidden');
     return data.publicUrl;
 }
@@ -43,9 +50,9 @@ async function handleMultipleFiles(input) {
             const item = document.createElement('div');
             item.className = "relative h-20 w-20 rounded-xl overflow-hidden border-2 border-white shadow";
             if (file.type.startsWith('video')) {
-                item.innerHTML = `<video src=\"${url}\" class=\"h-full w-full object-cover\"></video><div class=\"absolute inset-0 flex items-center justify-center bg-black/20\"><i data-lucide=\"play\" class=\"text-white w-4 h-4\"></i></div>`;
+                item.innerHTML = `<video src="${url}" class="h-full w-full object-cover"></video><div class="absolute inset-0 flex items-center justify-center bg-black/20"><i data-lucide="play" class="text-white w-4 h-4"></i></div>`;
             } else {
-                item.innerHTML = `<img src=\"${url}\" class=\"h-full w-full object-cover\">`;
+                item.innerHTML = `<img src="${url}" class="h-full w-full object-cover">`;
             }
             previewCont.appendChild(item);
         }
@@ -62,7 +69,7 @@ async function loadCustomers() {
             <div class="absolute -right-6 -top-6 opacity-5 group-hover:opacity-10 transition duration-700 scale-150 rotate-12"><i data-lucide="building-2" class="w-32 h-32"></i></div>
             <div class="flex justify-between items-start mb-8">
                 <div class="w-24 h-24 rounded-[2rem] bg-slate-900 overflow-hidden border-8 border-slate-50 shadow-xl group-hover:scale-110 transition duration-500">
-                    ${c.image_url ? `<img src="${c.image_url}" class="w-full h-full object-cover">` : `<div class=\"w-full h-full flex items-center justify-center text-blue-400 font-black italic text-xl\">BC</div>`}
+                    ${c.image_url ? `<img src="${c.image_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-blue-400 font-black italic text-xl">BC</div>`}
                 </div>
             </div>
             <h3 class="text-3xl font-black text-slate-900 mb-2 truncate italic uppercase tracking-tighter">${c.name}</h3>
@@ -70,18 +77,18 @@ async function loadCustomers() {
             <div class="flex gap-4 relative" onclick="event.stopPropagation()">
                 <button onclick='viewBranches(${JSON.stringify(c)})' class="flex-1 bg-slate-900 text-white font-black py-4 rounded-[1.5rem] text-[10px] hover:bg-blue-600 transition uppercase tracking-[0.1em]">ფილიალები</button>
                 <button onclick='openCustomerModal(${JSON.stringify(c)})' class="bg-blue-50 text-blue-600 px-6 rounded-[1.5rem] hover:bg-blue-600 transition shadow-sm"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                <button onclick='deleteData(\"customers\", \"${c.id}\")' class=\"text-slate-200 hover:text-red-500 transition\"><i data-lucide=\"trash-2\" class=\"w-4 h-4\"></i></button>
+                <button onclick='deleteData("customers", "${c.id}")' class="text-slate-200 hover:text-red-500 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
         </div>`).join('');
     lucide.createIcons();
 }
 
-/* ფილიალის ქვეშ აგრეგატების ჩატვირთვა */
 async function loadAssets() {
     if (!activeBranch) return;
     const { data, error } = await _supabase.from('assets').select('*').eq('branch_id', activeBranch.id).order('name');
     if (error) return;
 
+    // მონაცემების შენახვა handleAssetClick-ისთვის
     if (!window._av) window._av = {};
     window._av.branchAssets = data || [];
 
@@ -89,31 +96,140 @@ async function loadAssets() {
         <div onclick="handleAssetClick('${a.id}')" 
              class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden group hover:-translate-y-2 transition-all cursor-pointer">
             <div class="h-48 bg-slate-900 relative overflow-hidden">
-                ${a.image_url ? `<img src="${a.image_url}" class="w-full h-full object-cover opacity-80 group-hover:scale-110 transition duration-700">` : `<div class=\"w-full h-full flex items-center justify-center text-slate-700 font-black italic\">NO IMAGE</div>`}
+                ${a.image_url ? `<img src="${a.image_url}" class="w-full h-full object-cover opacity-80 group-hover:scale-110 transition duration-700">` : `<div class="w-full h-full flex items-center justify-center text-slate-700 font-black italic">NO IMAGE</div>`}
                 <div class="absolute top-4 left-4"><span class="status-badge ${a.status === 'Operational' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}">${a.status}</span></div>
                 <div class="absolute bottom-4 right-4 bg-white/10 backdrop-blur px-4 py-2 rounded-full text-[9px] font-black text-white uppercase tracking-widest italic">${a.asset_type}</div>
             </div>
             <div class="p-8">
                 <div class="flex justify-between items-start mb-4">
                     <div>
-                        <h4 class=\"text-2xl font-black text-slate-900 tracking-tighter italic uppercase\">${a.name}</h4>
-                        <p class=\"text-[10px] font-black text-slate-400 uppercase tracking-widest\">${a.brand} ${a.model || ''}</p>
+                        <h4 class="text-2xl font-black text-slate-900 tracking-tighter italic uppercase">${a.name}</h4>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${a.brand} ${a.model || ''}</p>
                     </div>
-                    <div class=\"text-right\"><span class=\"text-[10px] font-black text-blue-600 block uppercase\">TAG: ${a.tag_number || '---'}</span></div>
+                    <div class="text-right"><span class="text-[10px] font-black text-blue-600 block uppercase">TAG: ${a.tag_number || '---'}</span></div>
                 </div>
-                <div class=\"flex flex-col gap-2\" onclick=\"event.stopPropagation()\">
-                    <button onclick='viewServiceLogs(${JSON.stringify(a)})' class=\"w-full bg-orange-500 text-white py-4 rounded-2xl text-[9px] font-black uppercase hover:bg-orange-600 transition flex items-center justify-center gap-2 italic shadow-lg shadow-orange-100\">სერვისის ისტორია <i data-lucide=\"history\" class=\"w-4 h-4\"></i></button>
+                <div class="grid grid-cols-2 gap-y-3 mb-6 border-t border-slate-50 pt-6 text-[11px] font-bold">
+                    <div class="text-slate-400">სიმძლავრე: <span class="text-slate-900 italic">${a.cooling_capacity_kw || 0} kW</span></div>
+                    <div class="text-slate-400">ფრეონი: <span class="text-slate-900 italic">${a.refrigerant_type || '---'}</span></div>
+                    <div class="text-slate-400">სერიული: <span class="text-slate-900 italic text-[9px]">${a.serial_number || '---'}</span></div>
+                    <div class="text-slate-400">ელ-კვება: <span class="text-slate-900 italic">${a.voltage || 400}V / ${a.phase || '3'}</span></div>
+                </div>
+                <div class="flex flex-col gap-2" onclick="event.stopPropagation()">
+                    <button onclick='viewServiceLogs(${JSON.stringify(a)})' class="w-full bg-orange-500 text-white py-4 rounded-2xl text-[9px] font-black uppercase hover:bg-orange-600 transition flex items-center justify-center gap-2 italic shadow-lg shadow-orange-100">სერვისის ისტორია <i data-lucide="history" class="w-4 h-4"></i></button>
+                    <div class="flex gap-2">
+                        <button onclick='openAssetModal(${JSON.stringify(a)})' class="flex-1 bg-slate-900 text-white py-4 rounded-2xl text-[9px] font-black uppercase hover:bg-blue-600 transition">რედაქტირება</button>
+                        <button onclick='deleteData("assets", "${a.id}")' class="px-4 text-slate-300 hover:text-red-500 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
                 </div>
             </div>
         </div>`).join('');
     lucide.createIcons();
 }
 
-/* (saveCustomer, loadBranches, saveBranch, saveAsset, loadServiceLogs, saveServiceLog, deleteData ფუნქციები სრულად თქვენი ორიგინალი კოდიდან) */
-async function saveCustomer() { const isCompany = document.getElementById('c-btn-company').classList.contains('bg-slate-900'); const name = isCompany ? document.getElementById('c-name').value.trim() : document.getElementById('c-person-name').value.trim(); if (!name) { alert('სახელი სავალდებულოა!'); return; } const id = document.getElementById('c-id').value; const file = document.getElementById('c-file').files[0]; let imageUrl = document.getElementById('c-url').value; if (file) imageUrl = await uploadToStorage(file, 'customers'); const payload = { name, customer_type: isCompany ? 'Company' : 'Person', status: document.getElementById('c-status').value, legal_address: document.getElementById('c-legal-address').value, website: document.getElementById('c-website').value, bank_name: document.getElementById('c-bank').value, account_number: document.getElementById('c-account').value, image_url: imageUrl, phone: document.getElementById('c-phone').value, notes: document.getElementById('c-notes').value }; const { error } = id ? await _supabase.from('customers').update(payload).eq('id', id) : await _supabase.from('customers').insert([payload]); if (!error) { closeModals(); loadCustomers(); } else { alert(error.message); } }
-async function loadBranches() { const { data, error } = await _supabase.from('branches').select('*').eq('customer_id', activeCustomer.id).order('created_at'); if (error) return; document.getElementById('branches-list').innerHTML = data.map((b, i) => `<div class=\"bg-white rounded-[3.5rem] shadow-xl border border-slate-100 overflow-hidden flex flex-col md:flex-row min-h-[500px] group transition-all hover:shadow-2xl\"><div class=\"w-full md:w-96 relative bg-slate-100 overflow-hidden border-r border-slate-50\">${b.image_url ? `<img src=\"${b.image_url}\" class=\"w-full h-full object-cover\">` : `<div class=\"h-full flex items-center justify-center italic text-slate-300 font-black uppercase tracking-[0.2em] text-[10px]\">OB ფოტო არაა</div>`}<div id=\"map-${i}\" class=\"absolute bottom-8 left-8 right-8 h-40 rounded-[2rem] shadow-2xl border-4 border-white overflow-hidden\"></div></div><div class=\"p-12 flex-1 flex flex-col\"><div class=\"flex justify-between items-start mb-8\"><span class=\"status-badge ${b.is_active ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}\">${b.is_active ? 'Active' : 'Inactive'}</span><button onclick='openBranchModal(${JSON.stringify(b)})' class=\"text-blue-500 font-black text-[11px] uppercase hover:underline flex items-center gap-1 italic\">რედაქტირება</button></div><h3 class=\"text-5xl font-black text-slate-900 leading-none mb-3 italic tracking-tighter uppercase\">${b.name}</h3><p class=\"text-xs text-slate-400 font-bold mb-12 flex items-center gap-2 uppercase tracking-widest\">📍 ${b.address || 'მისამართი არაა'}</p><div class=\"flex gap-4 mt-auto\"><button onclick='viewAssets(${JSON.stringify(b)})' class=\"flex-[2] bg-slate-900 text-white font-black py-4 rounded-3xl text-[10px] uppercase tracking-widest hover:bg-blue-600 transition\">აგრეგატები (ASSETS)</button><button onclick='deleteData(\"branches\", \"${b.id}\")' class=\"bg-red-50 text-red-500 p-4 rounded-3xl hover:bg-red-500 hover:text-white transition\"><i data-lucide=\"trash-2\" class=\"w-5 h-5\"></i></button></div></div></div>`).join(''); data.forEach((b, i) => { if (b.lat && b.lng) { const m = L.map(`map-${i}`, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false }).setView([b.lat, b.lng], 15); L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(m); L.marker([b.lat, b.lng]).addTo(m); } }); lucide.createIcons(); }
-async function saveBranch() { const id = document.getElementById('b-id').value; const file = document.getElementById('b-file').files[0]; let imageUrl = document.getElementById('b-url').value; if (file) imageUrl = await uploadToStorage(file, 'branches'); const payload = { customer_id: activeCustomer.id, name: document.getElementById('b-name').value.trim(), is_active: document.getElementById('b-active').value === 'true', address: document.getElementById('b-address').value, lat: parseFloat(document.getElementById('b-lat').value), lng: parseFloat(document.getElementById('b-lng').value), image_url: imageUrl, contact_person: document.getElementById('b-pers').value, contact_phone: document.getElementById('b-phon').value }; const { error } = id ? await _supabase.from('branches').update(payload).eq('id', id) : await _supabase.from('branches').insert([payload]); if (!error) { closeModals(); loadBranches(); } else { alert(error.message); } }
-async function saveAsset() { const id = document.getElementById('a-id').value; const file = document.getElementById('a-file').files[0]; let imageUrl = document.getElementById('a-url').value; if (file) imageUrl = await uploadToStorage(file, 'assets_units'); let techSpecs = {}; try { techSpecs = JSON.parse(document.getElementById('a-tech').value); } catch(e) {} const payload = { branch_id: activeBranch.id, customer_id: activeCustomer.id, name: document.getElementById('a-name').value, asset_type: document.getElementById('a-type').value, brand: document.getElementById('a-brand').value, model: document.getElementById('a-model').value, image_url: imageUrl, technical_specs: techSpecs, status: document.getElementById('a-status').value }; const { error } = id ? await _supabase.from('assets').update(payload).eq('id', id) : await _supabase.from('assets').insert([payload]); if (!error) { closeModals(); loadAssets(); } else { alert(error.message); } }
-async function loadServiceLogs() { const { data, error } = await _supabase.from('service_logs').select('*').eq('asset_id', activeAsset.id).order('service_date', { ascending: false }); if (error) return; document.getElementById('service-logs-list').innerHTML = data.map(log => `<div class=\"bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl flex flex-col md:flex-row gap-8 relative group\"><div class=\"md:w-48 text-center flex flex-col items-center justify-center border-r border-slate-50 pr-8\"><span class=\"text-3xl font-black text-slate-900 italic leading-none\">${new Date(log.service_date).toLocaleDateString('ka-GE', {day:'2-digit', month:'short'})}</span></div><div class=\"flex-1\"><div class=\"flex justify-between mb-4\"><h4 class=\"text-xl font-black italic text-slate-800 uppercase tracking-tighter\">${log.technician_name}</h4></div><p class=\"text-sm text-slate-600 font-medium mb-6 leading-relaxed\">${log.job_description}</p></div></div>`).join(''); lucide.createIcons(); }
-async function saveServiceLog() { const payload = { asset_id: activeAsset.id, branch_id: activeBranch.id, technician_name: document.getElementById('sl-tech').value, service_date: document.getElementById('sl-date').value, service_type: document.getElementById('sl-type').value, job_description: document.getElementById('sl-desc').value, media_urls: uploadedMediaUrls }; const { error } = await _supabase.from('service_logs').insert([payload]); if (!error) { closeModals(); loadServiceLogs(); } else { alert("შეცდომა შენახვისას: " + error.message); } }
-async function deleteData(table, id) { if (confirm('ნამდვილად გსურთ წაშლა?')) { const { error } = await _supabase.from(table).delete().eq('id', id); if (!error) { if (table === 'customers') loadCustomers(); else if (table === 'branches') loadBranches(); else if (table === 'assets') loadAssets(); else loadServiceLogs(); } } }
+async function saveCustomer() {
+    const isCompany = document.getElementById('c-btn-company').classList.contains('bg-slate-900');
+    const name = isCompany ? document.getElementById('c-name').value.trim() : document.getElementById('c-person-name').value.trim();
+    const taxId = isCompany ? document.getElementById('c-tax').value.trim() : document.getElementById('c-person-tax').value.trim();
+    if (!name) { alert('სახელი სავალდებულოა!'); return; }
+    const id = document.getElementById('c-id').value;
+    const file = document.getElementById('c-file').files[0];
+    let imageUrl = document.getElementById('c-url').value;
+    if (file) imageUrl = await uploadToStorage(file, 'customers');
+    const addrText = isCompany ? document.getElementById('c-address-result-text').innerText : document.getElementById('c-person-address-result-text').innerText;
+    const payload = {
+        name, tax_id: taxId, customer_type: isCompany ? 'Company' : 'Person', status: document.getElementById('c-status').value,
+        industry: isCompany ? (document.getElementById('c-industry').value || null) : null, company_size: isCompany ? (document.getElementById('c-company-size').value || null) : null,
+        legal_address: document.getElementById('c-legal-address').value, website: document.getElementById('c-website').value, is_vat_payer: document.getElementById('c-vat').value === 'true',
+        bank_name: isCompany ? document.getElementById('c-bank').value : document.getElementById('c-person-bank').value, account_number: isCompany ? document.getElementById('c-account').value : document.getElementById('c-person-account').value,
+        actual_address: addrText, map_url: document.getElementById('c-map-url').value, lat: parseFloat(document.getElementById('c-lat').value), lng: parseFloat(document.getElementById('c-lng').value),
+        contact_person_1: document.getElementById('c-contact1-name').value, position_1: document.getElementById('c-contact1-pos').value, email_1: document.getElementById('c-contact1-email').value, phone_1: document.getElementById('c-contact1-phone').value,
+        phone: document.getElementById('c-phone').value, hourly_rate: parseFloat(document.getElementById('c-rate').value) || 0, notes: document.getElementById('c-notes').value, image_url: imageUrl
+    };
+    const { error } = id ? await _supabase.from('customers').update(payload).eq('id', id) : await _supabase.from('customers').insert([payload]);
+    if (!error) { closeModals(); loadCustomers(); } else { alert('შეცდომა: ' + error.message); }
+}
+
+async function loadBranches() {
+    const { data, error } = await _supabase.from('branches').select('*').eq('customer_id', activeCustomer.id).order('created_at');
+    if (error) return;
+    document.getElementById('branches-list').innerHTML = data.map((b, i) => `
+        <div class="bg-white rounded-[3.5rem] shadow-xl border border-slate-100 overflow-hidden flex flex-col md:flex-row min-h-[500px] group transition-all hover:shadow-2xl">
+            <div class="w-full md:w-96 relative bg-slate-100 overflow-hidden border-r border-slate-50">
+                ${b.image_url ? `<img src="${b.image_url}" class="w-full h-full object-cover group-hover:scale-110 transition duration-1000">` : `<div class="h-full flex items-center justify-center text-slate-300 font-black uppercase tracking-[0.2em] text-[10px]">OB ფოტო არაა</div>`}
+                <div id="map-${i}" class="absolute bottom-8 left-8 right-8 h-40 rounded-[2rem] shadow-2xl border-4 border-white overflow-hidden transition-transform group-hover:translate-y-2"></div>
+            </div>
+            <div class="p-12 flex-1 flex flex-col">
+                <div class="flex justify-between items-start mb-8"><span class="status-badge ${b.is_active ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">${b.is_active ? 'Active' : 'Inactive'}</span>
+                <button onclick='openBranchModal(${JSON.stringify(b)})' class="text-blue-500 font-black text-[11px] uppercase hover:underline flex items-center gap-1 italic">რედაქტირება <i data-lucide="chevron-right" class="w-3 h-3"></i></button></div>
+                <h3 class="text-5xl font-black text-slate-900 leading-none mb-3 italic tracking-tighter uppercase">${b.name}</h3>
+                <p class="text-xs text-slate-400 font-bold mb-12 flex items-center gap-2 uppercase tracking-widest"><i data-lucide="map-pin" class="w-4 h-4"></i> ${b.address || 'მისამართი არაა'}</p>
+                <div class="grid grid-cols-2 gap-4 mb-10 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <div class="border-b pb-2">ელ-კვება: <span class="text-slate-900">${b.power_supply_type || 'N/A'}</span></div>
+                    <div class="border-b pb-2">ფართი: <span class="text-slate-900">${b.square_meters || 0} m²</span></div>
+                    <div class="border-b pb-2">მენეჯერი: <span class="text-slate-900">${b.contact_person || 'N/A'}</span></div>
+                    <div class="border-b pb-2">ტელეფონი: <span class="text-slate-900">${b.contact_phone || 'N/A'}</span></div>
+                </div>
+                <div class="flex gap-4 mt-auto">
+                    <button onclick='viewAssets(${JSON.stringify(b)})' class="flex-[2] bg-slate-900 text-white font-black py-4 rounded-3xl text-[10px] uppercase tracking-widest hover:bg-blue-600 transition">აგრეგატები (ASSETS) <i data-lucide="package" class="inline w-4 h-4 ml-1"></i></button>
+                    <button onclick='deleteData("branches", "${b.id}")' class="bg-red-50 text-red-500 p-4 rounded-3xl hover:bg-red-500 hover:text-white transition"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+        </div>`).join('');
+    data.forEach((b, i) => { if (b.lat && b.lng) { const m = L.map(`map-${i}`, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false }).setView([b.lat, b.lng], 15); L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(m); L.marker([b.lat, b.lng]).addTo(m); } });
+    lucide.createIcons();
+}
+
+async function saveBranch() {
+    const id = document.getElementById('b-id').value;
+    const file = document.getElementById('b-file').files[0];
+    let imageUrl = document.getElementById('b-url').value;
+    if (file) imageUrl = await uploadToStorage(file, 'branches');
+    if (!document.getElementById('b-name').value.trim()) { alert('ფილიალის სახელი სავალდებულოა!'); return; }
+    const payload = {
+        customer_id: activeCustomer.id, name: document.getElementById('b-name').value.trim(), is_active: document.getElementById('b-active').value === 'true', branch_type: document.getElementById('b-type').value, building_type: document.getElementById('b-building').value || null, service_priority: document.getElementById('b-priority').value,
+        address: document.getElementById('b-address').value, lat: parseFloat(document.getElementById('b-lat').value) || null, lng: parseFloat(document.getElementById('b-lng').value) || null, floor_zone: document.getElementById('b-floor-zone').value || null,
+        power_supply_type: document.getElementById('b-power').value || null, refrigeration_type: document.getElementById('b-refrig').value || null, square_meters: parseFloat(document.getElementById('b-sqm').value) || null, year_built: parseInt(document.getElementById('b-year').value) || null, working_hours: document.getElementById('b-hours').value || null, access_code: document.getElementById('b-access').value || null, parking_details: document.getElementById('b-parking').value || null,
+        contact_person: document.getElementById('b-pers').value || null, contact_phone: document.getElementById('b-phon').value || null, emergency_contact: document.getElementById('b-emerg-contact').value || null, emergency_phone: document.getElementById('b-emerg-phone').value || null, after_hours_contact: document.getElementById('b-after-contact').value || null, after_hours_phone: document.getElementById('b-after-phone').value || null,
+        service_frequency: document.getElementById('b-freq').value || null, contract_type: document.getElementById('b-contract-type').value || null, sla_response_hours: parseInt(document.getElementById('b-sla').value) || 4, contract_start: document.getElementById('b-contract-start').value || null, contract_end: document.getElementById('b-contract-end').value || null,
+        notes: document.getElementById('b-notes').value || null, image_url: imageUrl
+    };
+    const { error } = id ? await _supabase.from('branches').update(payload).eq('id', id) : await _supabase.from('branches').insert([payload]);
+    if (!error) { closeModals(); loadBranches(); } else { alert(error.message); }
+}
+
+async function saveAsset() {
+    const id = document.getElementById('a-id').value;
+    const file = document.getElementById('a-file').files[0];
+    let imageUrl = document.getElementById('a-url').value;
+    if (file) imageUrl = await uploadToStorage(file, 'assets_units');
+    let techSpecs = {}; try { const techVal = document.getElementById('a-tech').value; techSpecs = techVal ? JSON.parse(techVal) : {}; } catch (e) { techSpecs = {}; }
+    const payload = {
+        branch_id: activeBranch.id, customer_id: activeCustomer.id, tag_number: document.getElementById('a-tag').value, qr_code_id: document.getElementById('a-qr').value, name: document.getElementById('a-name').value, asset_type: document.getElementById('a-type').value, category: document.getElementById('a-category').value, brand: document.getElementById('a-brand').value, model: document.getElementById('a-model').value, serial_number: document.getElementById('a-serial').value, manufacture_year: parseInt(document.getElementById('a-year').value) || null, cooling_capacity_kw: parseFloat(document.getElementById('a-capacity').value) || null, refrigerant_type: document.getElementById('a-refr-type').value, refrigerant_charge_kg: parseFloat(document.getElementById('a-refr-charge').value) || null, voltage: parseInt(document.getElementById('a-voltage').value) || 400, phase: document.getElementById('a-phase').value, max_current_amp: parseFloat(document.getElementById('a-current').value) || null, location_on_site: document.getElementById('a-loc').value, installation_date: document.getElementById('a-inst-date').value || null, warranty_until: document.getElementById('a-warn-date').value || null, status: document.getElementById('a-status').value, condition_score: parseInt(document.getElementById('a-score').value) || 10, last_service_date: document.getElementById('a-last-serv').value || null, service_interval_days: parseInt(document.getElementById('a-interval').value) || 180, iot_device_id: document.getElementById('a-iot').value, manual_url: document.getElementById('a-manual').value, wiring_diagram_url: document.getElementById('a-wiring').value, technical_specs: techSpecs, image_url: imageUrl || null
+    };
+    const { error } = id ? await _supabase.from('assets').update(payload).eq('id', id) : await _supabase.from('assets').insert([payload]);
+    if (!error) { closeModals(); loadAssets(); } else { alert(error.message); }
+}
+
+async function loadServiceLogs() {
+    const { data, error } = await _supabase.from('service_logs').select('*').eq('asset_id', activeAsset.id).order('service_date', { ascending: false });
+    if (error) return;
+    if (data.length === 0) { document.getElementById('service-logs-list').innerHTML = `<div class="p-20 text-center bg-white rounded-[3rem] border-4 border-dashed border-slate-100 text-slate-300 font-black uppercase tracking-widest italic">ისტორია ცარიელია</div>`; return; }
+    document.getElementById('service-logs-list').innerHTML = data.map(log => `<div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl flex flex-col md:flex-row gap-8 relative group"><div class="md:w-48 text-center flex flex-col items-center justify-center border-r border-slate-50 pr-8"><span class="text-3xl font-black text-slate-900 italic leading-none">${new Date(log.service_date).toLocaleDateString('ka-GE', {day:'2-digit', month:'short'})}</span><span class="text-[10px] font-black text-slate-400 uppercase mt-2">${new Date(log.service_date).getFullYear()}</span><div class="mt-4 px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-[9px] font-black uppercase">${log.service_type}</div></div><div class="flex-1"><div class="flex justify-between mb-4"><h4 class="text-xl font-black italic text-slate-800 uppercase tracking-tighter">${log.technician_name}</h4><button onclick='deleteData("service_logs", "${log.id}")' class="text-slate-200 hover:text-red-500 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div><p class="text-sm text-slate-600 font-medium mb-6 leading-relaxed">${log.job_description}</p><div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-[10px] font-black uppercase italic mb-6"><div class="text-blue-500">P-Suc: <span class="text-slate-900">${log.suction_pressure || '-'} Bar</span></div><div class="text-red-500">P-Dis: <span class="text-slate-900">${log.discharge_pressure || '-'} Bar</span></div><div class="text-blue-500">T-Suc: <span class="text-slate-900">${log.suction_temp || '-'} °C</span></div><div class="text-red-500">T-Dis: <span class="text-slate-900">${log.discharge_temp || '-'} °C</span></div></div>${log.media_urls && log.media_urls.length > 0 ? `<div class="flex gap-2 overflow-x-auto pb-2">${log.media_urls.map(url => (url.includes('.mp4') || url.includes('.mov')) ? `<video src="${url}" class="h-16 w-16 rounded-xl object-cover border-2 border-slate-50"></video>` : `<img src="${url}" class="h-16 w-16 rounded-xl object-cover border-2 border-slate-50">`).join('')}</div>` : ''}</div></div>`).join('');
+    lucide.createIcons();
+}
+
+async function saveServiceLog() {
+    const id = document.getElementById('sl-id').value;
+    const payload = {
+        asset_id: activeAsset.id, branch_id: activeBranch.id, technician_name: document.getElementById('sl-tech').value, service_date: document.getElementById('sl-date').value, service_type: document.getElementById('sl-type').value, job_description: document.getElementById('sl-desc').value, suction_pressure: parseFloat(document.getElementById('sl-suction-p').value) || null, discharge_pressure: parseFloat(document.getElementById('sl-disch-p').value) || null, suction_temp: parseFloat(document.getElementById('sl-suction-t').value) || null, discharge_temp: parseFloat(document.getElementById('sl-disch-t').value) || null, superheat: parseFloat(document.getElementById('sl-sh').value) || null, subcooling: parseFloat(document.getElementById('sl-sc').value) || null, ambient_temp: parseFloat(document.getElementById('sl-amb').value) || null, voltage_l1_l2: parseFloat(document.getElementById('sl-volt').value) || null, amp_draw_comp: parseFloat(document.getElementById('sl-amp-comp').value) || null, amp_draw_fan: parseFloat(document.getElementById('sl-amp-fan').value) || null, refrigerant_added_kg: parseFloat(document.getElementById('sl-refr-add').value) || 0, refrigerant_recovered_kg: parseFloat(document.getElementById('sl-refr-rec').value) || 0, leak_test_performed: document.getElementById('sl-leak').checked, leak_test_result: document.getElementById('sl-leak-res').value, filters_cleaned: document.getElementById('sl-filter').checked, coils_cleaned: document.getElementById('sl-coil').checked, electrical_connections_checked: document.getElementById('sl-elec').checked, system_status_after: document.getElementById('sl-status-after').value, recommendations: document.getElementById('sl-recom').value, media_urls: uploadedMediaUrls
+    };
+    const { error } = id ? await _supabase.from('service_logs').update(payload).eq('id', id) : await _supabase.from('service_logs').insert([payload]);
+    if (!error) { closeModals(); loadServiceLogs(); } else { alert("შეცდომა შენახვისას: " + error.message); }
+}
+
+async function deleteData(table, id) {
+    if (confirm('ნამდვილად გსურთ წაშლა?')) {
+        const { error } = await _supabase.from(table).delete().eq('id', id);
+        if (!error) { if (table === 'customers') loadCustomers(); else if (table === 'branches') loadBranches(); else if (table === 'assets') loadAssets(); else loadServiceLogs(); } else { alert("Delete error: " + error.message); }
+    }
+}
