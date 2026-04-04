@@ -167,14 +167,10 @@ function _bdcMiniList(id,assets){
 }
 
 /* Fix 6: asset card click → asset_view.js */
-function _openBdcAssetCard(a){
-    activeAsset=a;
-    window._pendingAssetId=a.id;
-    if(typeof loadAssetView==='function'){
-        loadAssetView(activeBranch);
-    } else {
-        /* fallback — სერვ. ისტ. */
-        openBdcAsset(a);
+function _openBdcAssetCard(a) {
+    // ეს სტრიქონი უზრუნველყოფს გადასვლას
+    if (typeof navigateToAsset === 'function') {
+        navigateToAsset(a, activeBranch);
     }
 }
 
