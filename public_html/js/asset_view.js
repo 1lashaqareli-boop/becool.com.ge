@@ -452,37 +452,52 @@ async function loadAssetView(branch) {
     // badge-ები sidebar-ში
     _avUpdateBadges();
 
-    /* ══ _pendingAssetId ══
-       თუ branch_dashboard-იდან კონკრეტული asset-ი გამოირჩა,
-       მის type-ს ავირჩევთ sidebar-ში და პირდაპირ გავხსნით.
-       window._pendingAssetId = asset.id  (სეტავს branch_dashboard.js)
+    /* ══════════════════════════════════════════════════════════════
+       _pendingAssetId — branch_dashboard / branch_ui-დან სპეციფიკური asset
+       გამოძახება: window._pendingAssetId = a.id; loadAssetView(branch);
     ══════════════════════════════════════════════════════════════ */
     const pendingId = window._pendingAssetId;
+    console.log('[AV] loadAssetView complete. pendingId=', pendingId,
+                '| assets loaded=', window._av.branchAssets?.length,
+                '| branch=', branch?.name);
+
     if (pendingId) {
-        window._pendingAssetId = null; /* გასუფთავება */
-        const target = (window._av.branchAssets || []).find(a => a.id === pendingId);
+        window._pendingAssetId = null; /* გასუფთავება — ერთხელ */
+
+        const allAssets = window._av.branchAssets || [];
+        const target = allAssets.find(a => a.id === pendingId);
+        console.log('[AV] target=', target ? target.name + ' / ' + target.asset_type : 'NOT FOUND');
+
         if (target) {
-            /* sidebar-ში სწორი type-ი გამოვსახოთ */
+            /* sidebar: სწორი type active */
+            window._av.currentType = target.asset_type || 'Other';
             const typeEl = document.querySelector(`.av-item[data-type="${target.asset_type}"]`);
             if (typeEl) {
                 document.querySelectorAll('.av-item').forEach(i => i.classList.remove('active'));
                 typeEl.classList.add('active');
-                window._av.currentType = target.asset_type;
-                /* cat section-ი გახსნა (collapse → open) */
                 const catWrap = typeEl.closest('.av-cat-wrap');
                 if (catWrap) {
                     const catEl = catWrap.querySelector('.av-cat');
                     if (catEl && !catEl.classList.contains('open')) catEl.classList.add('open');
                 }
+                console.log('[AV] sidebar type selected:', target.asset_type);
+            } else {
+                console.warn('[AV] no sidebar item for type:', target.asset_type, '— showing list anyway');
             }
-            /* list panel briefly ჩვენება, შემდეგ პირდაპირ გახსნა */
-            _avShowListPanel();
-            avOpenAsset(target);
+
+            /* პირდაპირ detail view-ში გახსნა */
+            console.log('[AV] opening avOpenAsset:', target.name);
+            await avOpenAsset(target);
             return;
+
+        } else {
+            console.warn('[AV] asset id not in branchAssets:', pendingId,
+                         '| available ids:', allAssets.map(a=>a.id.slice(0,8)).join(','));
+            /* fallback — list */
         }
     }
 
-    // list panel ჩვენება (ჩვეულებრივი)
+    /* ჩვეულებრივი შემთხვევა — list panel */
     _avShowListPanel();
 }
 
@@ -574,22 +589,65 @@ function _avShowListPanel() {
    ASSET DETAIL OPEN
    ══════════════════════════════════════════════════════════════ */
 async function avOpenAsset(asset) {
+    console.log('[AV] avOpenAsset called:', asset?.name, asset?.id?.slice(0,8));
+
+    if (!asset) {
+        console.error('[AV] avOpenAsset: asset is null/undefined!');
+        return;
+    }
+
     window._av.currentAsset = asset;
     window._av.detailsOpen  = false;
 
-    document.getElementById('av-list-panel').classList.add('av-hidden');
-    document.getElementById('av-detail-panel').classList.remove('av-hidden');
+    /* panels-ის არსებობის შემოწმება */
+    const listPanel   = document.getElementById('av-list-panel');
+    const detailPanel = document.getElementById('av-detail-panel');
+    const homeTab     = document.getElementById('av-tc-home');
+
+    if (!listPanel || !detailPanel || !homeTab) {
+        console.error('[AV] avOpenAsset: panels not found in DOM!',
+                      {listPanel:!!listPanel, detailPanel:!!detailPanel, homeTab:!!homeTab});
+        /* HTML-ი შეიძლება re-inject-ი დასჭირდეს */
+        injectAssetViewCSS();
+        injectAssetViewHTML();
+        /* retry */
+        const lp = document.getElementById('av-list-panel');
+        const dp = document.getElementById('av-detail-panel');
+        if (!lp || !dp) {
+            console.error('[AV] retry also failed — asset-view HTML injection problem');
+            alert('Asset dashboard ვერ გაიხსნა. გვერდი განაახლეთ.');
+            return;
+        }
+        lp.classList.add('av-hidden');
+        dp.classList.remove('av-hidden');
+    } else {
+        listPanel.classList.add('av-hidden');
+        detailPanel.classList.remove('av-hidden');
+    }
 
     _avFillHeader(asset);
     _avFillKpiStrip(asset);
 
-    // tabs reset
+    /* tabs reset */
     document.querySelectorAll('.av-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.av-tab-content').forEach(c => c.classList.add('av-hidden'));
-    document.querySelector('.av-tab').classList.add('active');
-    document.getElementById('av-tc-home').classList.remove('av-hidden');
+    const firstTab = document.querySelector('.av-tab');
+    if (firstTab) firstTab.classList.add('active');
+    const tcHome = document.getElementById('av-tc-home');
+    if (tcHome) tcHome.classList.remove('av-hidden');
 
+    console.log('[AV] avOpenAsset: rendering home tab...');
     await _avRenderHome(asset);
+    console.log('[AV] avOpenAsset: DONE');
+
+    /* _pendingAssetTab — "სერვ. ისტ." ან სხვა ტაბი */
+    const pendingTab = window._pendingAssetTab;
+    if (pendingTab) {
+        window._pendingAssetTab = null;
+        console.log('[AV] switching to pending tab:', pendingTab);
+        const tabEl = document.querySelector(`.av-tab[data-tab="${pendingTab}"]`);
+        if (tabEl) { avSwitchTab(pendingTab, tabEl); }
+    }
 }
 
 function avBackToList() {
