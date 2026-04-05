@@ -168,16 +168,32 @@ function _bdcMiniList(id,assets){
 
 /* Fix 5+6: asset card click → asset_view.js dashboard with this specific asset */
 function _openBdcAssetCard(a){
+    if (!a || !a.id) {
+        console.error('[BDC] _openBdcAssetCard: invalid asset', a);
+        return;
+    }
+    console.log('[BDC] _openBdcAssetCard called:', a.name, '| id=', a.id.slice(0,8),
+                '| type=', a.asset_type, '| branch=', activeBranch?.name);
+
     activeAsset = a;
-    /* _pendingAssetId → asset_view.js-ს ეტყვის რომელი asset გახსნას */
+
+    /* _pendingAssetId — asset_view.js loadAssetView-ი ამოიკითხავს */
     window._pendingAssetId = a.id;
-    /* breadcrumb-ი ფილიალზე განახლება */
-    if (typeof _setNavBranch === 'function') _setNavBranch(activeBranch);
-    /* asset_view.js loadAssetView ფუნქცია */
+    console.log('[BDC] window._pendingAssetId set to:', a.id.slice(0,8));
+
+    /* breadcrumb განახლება */
+    if (typeof _setNavBranch === 'function') {
+        _setNavBranch(activeBranch);
+        console.log('[BDC] breadcrumb updated for branch:', activeBranch?.name);
+    }
+
+    /* loadAssetView — asset_view.js */
     if (typeof loadAssetView === 'function') {
+        console.log('[BDC] calling loadAssetView for branch:', activeBranch?.name);
         loadAssetView(activeBranch);
     } else {
-        /* fallback: სერვ. ისტ. */
+        console.warn('[BDC] loadAssetView NOT FOUND — asset_view.js ჩატვირთული არ არის?');
+        /* fallback: service log view */
         openBdcAsset(a);
     }
 }
@@ -473,11 +489,26 @@ function _showServiceModal(s){
     </div>`;
 }
 
+/* openBdcAsset — "სერვ. ისტ." ღილაკი card-ზე
+   asset_view.js თუ ჩატვირთულია → loadAssetView + svc ტაბი
+   fallback → ძველი service-logs-view
+*/
 function openBdcAsset(a){
-    activeAsset=a;
-    document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));
-    document.getElementById('service-logs-view').classList.add('active');
-    document.getElementById('service-view-title').innerText=a.name||'სერვ.';
-    loadServiceLogs();
+    activeAsset = a;
+    console.log('[BDC] openBdcAsset:', a?.name);
+
+    if (typeof loadAssetView === 'function') {
+        /* asset_view.js-ის სერვ. ისტ. ტაბი */
+        window._pendingAssetId  = a.id;
+        window._pendingAssetTab = 'svc'; /* სერვ. ისტ. ტაბი */
+        if (typeof _setNavBranch === 'function') _setNavBranch(activeBranch);
+        loadAssetView(activeBranch);
+    } else {
+        /* fallback */
+        document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));
+        document.getElementById('service-logs-view').classList.add('active');
+        document.getElementById('service-view-title').innerText=a.name||'სერვ.';
+        loadServiceLogs();
+    }
 }
 function loadBdcAssets(){loadBdcAssetsMini();}
