@@ -452,7 +452,37 @@ async function loadAssetView(branch) {
     // badge-ები sidebar-ში
     _avUpdateBadges();
 
-    // list panel ჩვენება
+    /* ══ _pendingAssetId ══
+       თუ branch_dashboard-იდან კონკრეტული asset-ი გამოირჩა,
+       მის type-ს ავირჩევთ sidebar-ში და პირდაპირ გავხსნით.
+       window._pendingAssetId = asset.id  (სეტავს branch_dashboard.js)
+    ══════════════════════════════════════════════════════════════ */
+    const pendingId = window._pendingAssetId;
+    if (pendingId) {
+        window._pendingAssetId = null; /* გასუფთავება */
+        const target = (window._av.branchAssets || []).find(a => a.id === pendingId);
+        if (target) {
+            /* sidebar-ში სწორი type-ი გამოვსახოთ */
+            const typeEl = document.querySelector(`.av-item[data-type="${target.asset_type}"]`);
+            if (typeEl) {
+                document.querySelectorAll('.av-item').forEach(i => i.classList.remove('active'));
+                typeEl.classList.add('active');
+                window._av.currentType = target.asset_type;
+                /* cat section-ი გახსნა (collapse → open) */
+                const catWrap = typeEl.closest('.av-cat-wrap');
+                if (catWrap) {
+                    const catEl = catWrap.querySelector('.av-cat');
+                    if (catEl && !catEl.classList.contains('open')) catEl.classList.add('open');
+                }
+            }
+            /* list panel briefly ჩვენება, შემდეგ პირდაპირ გახსნა */
+            _avShowListPanel();
+            avOpenAsset(target);
+            return;
+        }
+    }
+
+    // list panel ჩვენება (ჩვეულებრივი)
     _avShowListPanel();
 }
 
@@ -504,18 +534,14 @@ function _avShowListPanel() {
         return;
     }
 
-  // ფილტრაცია პატარა ასოებით, რომ ბაზას დაემთხვეს
-const filtered = window._av.branchAssets.filter(a => 
-    (a.asset_type || "").toLowerCase() === (type || "").toLowerCase()
-);
+    const filtered = window._av.branchAssets.filter(a => a.asset_type === type);
+    titleEl.textContent = type;
+    subEl.textContent   = filtered.length + ' აგრეგატი';
 
-titleEl.textContent = type;
-subEl.textContent   = filtered.length + ' აგრეგატი';
-
-if (!filtered.length) {
-    grid.innerHTML = `<div id="av-empty-msg" class="av-empty">${type} — ჩანაწერები არ არის</div>`;
-    return;
-}
+    if (!filtered.length) {
+        grid.innerHTML = `<div class="av-empty">${type} — ჩანაწერები არ არის</div>`;
+        return;
+    }
 
     const stClass = { Operational:'av-s-ok', Maintenance_Required:'av-s-maint', Down:'av-s-down' };
     const stLabel = { Operational:'OK', Maintenance_Required:'Maint.', Down:'Down' };
