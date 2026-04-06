@@ -31,12 +31,21 @@ function injectAssetViewHTML() {
           <div class="av-sb-sub">აგრეგატები</div>
         </div>
 
+        <!-- ყველა -->
+        <div class="av-cat-wrap">
+          <div class="av-item av-item-all active" data-type="ALL" onclick="avSelectType(this)" style="padding-left:16px;font-size:12px;font-weight:700;color:#fff;padding-top:10px;padding-bottom:10px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="7" rx="2"/><rect x="2" y="14" width="20" height="7" rx="2"/></svg>
+            ყველა
+            <span class="av-badge" id="badge-ALL" style="background:rgba(29,158,117,.4);color:#9FE1CB">0</span>
+          </div>
+        </div>
+
         <!-- კონდიციონერები -->
         <div class="av-sb-section-label">კონდიციონერები</div>
         <div class="av-cat-wrap">
           <div class="av-cat open" onclick="avToggleCat(this)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="10" rx="2"/><path d="M6 11h12"/></svg>
-            AC სისტემები
+            AC - კონდიციონერები
             <svg class="av-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
           <div class="av-sub">
@@ -187,7 +196,7 @@ function injectAssetViewHTML() {
           <div class="av-tabs" id="av-tabs">
             <div class="av-tab active" onclick="avSwitchTab('home',this)">მთავარი</div>
             <div class="av-tab" onclick="avSwitchTab('svc',this)">სერვ. ისტ.</div>
-            <div class="av-tab" onclick="avSwitchTab('status',this)">მდგ. &amp; გეგმა</div>
+            <div class="av-tab" onclick="avSwitchTab('status',this)">Live მდგომარეობა</div>
             <div class="av-tab" onclick="avSwitchTab('inv',this)">ინვოისები</div>
             <div class="av-tab" onclick="avSwitchTab('iot',this)">IoT / BMS</div>
             <div class="av-tab" onclick="avSwitchTab('lib',this)">ბიბლიოთეკა</div>
@@ -453,6 +462,13 @@ async function loadAssetView(branch) {
     _avUpdateBadges();
 
     // list panel ჩვენება
+    // default: ყველა კატეგორია
+    window._av.currentType = 'ALL';
+    const allEl = document.querySelector('.av-item[data-type="ALL"]');
+    if (allEl) {
+        document.querySelectorAll('.av-item').forEach(i => i.classList.remove('active'));
+        allEl.classList.add('active');
+    }
     _avShowListPanel();
 }
 
@@ -480,7 +496,11 @@ function _avUpdateBadges() {
     });
     document.querySelectorAll('[id^="badge-"]').forEach(el => {
         const type = el.id.replace('badge-', '');
-        el.textContent = counts[type] || 0;
+        if (type === 'ALL') {
+            el.textContent = window._av.branchAssets.length;
+        } else {
+            el.textContent = counts[type] || 0;
+        }
     });
 }
 
@@ -504,13 +524,15 @@ function _avShowListPanel() {
         return;
     }
 
-  // ფილტრაცია პატარა ასოებით, რომ ბაზას დაემთხვეს
-const filtered = window._av.branchAssets.filter(a => 
-    (a.asset_type || "").toLowerCase() === (type || "").toLowerCase()
-);
+    // ALL = ყველა აგრეგატი
+    const filtered = type === 'ALL'
+        ? window._av.branchAssets
+        : window._av.branchAssets.filter(a =>
+            (a.asset_type || '').toLowerCase() === type.toLowerCase()
+          );
 
-titleEl.textContent = type;
-subEl.textContent   = filtered.length + ' აგრეგატი';
+    titleEl.textContent = type === 'ALL' ? 'ყველა აგრეგატი' : type;
+    subEl.textContent   = filtered.length + ' აგრეგატი';
 
 if (!filtered.length) {
     grid.innerHTML = `<div id="av-empty-msg" class="av-empty">${type} — ჩანაწერები არ არის</div>`;
@@ -819,56 +841,8 @@ async function _avRenderSvc() {
    STATUS TAB
    ══════════════════════════════════════════════════════════════ */
 async function _avRenderStatus() {
-    const tc = document.getElementById('av-tc-status');
-    if (!tc || !window._av.currentAsset) return;
-
-    const { data: logs } = await _supabase
-        .from('service_logs')
-        .select('service_date,suction_pressure,discharge_pressure,suction_temp,discharge_temp,superheat,subcooling,ambient_temp_c,comp_current_a,fan_current_a,technician_name')
-        .eq('asset_id', window._av.currentAsset.id)
-        .order('service_date', { ascending: false })
-        .limit(1);
-
-    const m = logs?.[0];
-    const a = window._av.currentAsset;
-
-    tc.innerHTML = `
-    <div class="av-grid-2">
-      <div class="av-tcard">
-        <div class="av-tcard-h">ბოლო სერვ. გაზომვები</div>
-        ${m ? `
-        <div class="av-grid-2" style="gap:6px">
-          <div class="av-meas g"><div class="av-meas-l">LP წნევა</div><div class="av-meas-v">${m.suction_pressure||'—'}<span class="av-meas-u">Bar</span></div></div>
-          <div class="av-meas ${m.discharge_pressure>28?'y':'g'}"><div class="av-meas-l">HP წნევა</div><div class="av-meas-v">${m.discharge_pressure||'—'}<span class="av-meas-u">Bar</span></div></div>
-          <div class="av-meas g"><div class="av-meas-l">ტ. შეწ.</div><div class="av-meas-v">${m.suction_temp||'—'}<span class="av-meas-u">°C</span></div></div>
-          <div class="av-meas ${m.discharge_temp>90?'r':m.discharge_temp>70?'y':'g'}"><div class="av-meas-l">ტ. დაჭ.</div><div class="av-meas-v">${m.discharge_temp||'—'}<span class="av-meas-u">°C</span></div></div>
-          <div class="av-meas ${m.superheat>=4&&m.superheat<=8?'g':'y'}"><div class="av-meas-l">Superheat</div><div class="av-meas-v">${m.superheat||'—'}<span class="av-meas-u">K</span></div></div>
-          <div class="av-meas g"><div class="av-meas-l">Subcooling</div><div class="av-meas-v">${m.subcooling||'—'}<span class="av-meas-u">K</span></div></div>
-          <div class="av-meas g"><div class="av-meas-l">კომპ. A</div><div class="av-meas-v">${m.comp_current_a||'—'}<span class="av-meas-u">A</span></div></div>
-          <div class="av-meas g"><div class="av-meas-l">გარ. ტემპ.</div><div class="av-meas-v">${m.ambient_temp_c||'—'}<span class="av-meas-u">°C</span></div></div>
-        </div>
-        <div style="font-size:10px;color:#94a3b8;margin-top:8px">${new Date(m.service_date).toLocaleDateString('ka-GE')} · ${m.technician_name||''}</div>
-        ` : '<div class="av-empty">გაზომვები არ არის</div>'}
-      </div>
-      <div class="av-tcard">
-        <div class="av-tcard-h">გეგმ. სერვ. <span class="av-tcard-ha">+ გეგმა</span></div>
-        <div class="av-sched-row">
-          <span class="av-dot" style="background:#f59e0b"></span>
-          <span class="av-sched-date">მომდ. PPM</span>
-          <span class="av-sched-task">ფილტ. გაწმ. + leak test</span>
-          <span class="av-days warn">${a.service_interval_days||90}დ. ინტ.</span>
-        </div>
-        <div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:5px">
-            <span>Unit Health</span>
-            <span style="color:${(a.condition_score||5)>=7?'#166534':'#92400e'};font-weight:700">${a.condition_score||'—'} / 10</span>
-          </div>
-          <div class="av-hbar"><div class="av-hbar-fill" style="width:${(a.condition_score||0)*10}%;background:${(a.condition_score||0)>=7?'#10b981':'#f59e0b'}"></div></div>
-        </div>
-      </div>
-    </div>`;
+    await lsRender();
 }
-
 
 /* ══════════════════════════════════════════════════════════════
    INV TAB

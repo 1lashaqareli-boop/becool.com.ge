@@ -184,7 +184,12 @@ function showBranches(){document.querySelectorAll('.view-section').forEach(s=>s.
 function showAssets(){document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));document.getElementById('asset-view').classList.add('active');}
 function viewAssets(b){
     activeBranch=b;
-    if(typeof loadAssetView==='function'){loadAssetView(b);return;}
+    if(typeof loadAssetView==='function'){
+        window._av = window._av || {};
+        window._av.currentType = 'ALL';
+        loadAssetView(b);
+        return;
+    }
     document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));
     document.getElementById('asset-view').classList.add('active');
     document.getElementById('asset-view-title').innerText=b.name;
@@ -558,6 +563,12 @@ async function _openAssetFromTable(a){
     window._nav.branch=branch;
     _renderBreadcrumb();
     window._pendingAssetId = a.id; /* asset_view.js-ისთვის */
+    window._av = window._av || {};
+    window._av.currentType = 'ALL';
+    if(typeof loadAssetView==='function'){
+        loadAssetView(branch);
+        return;
+    }
     if(typeof _doViewBranchDashboard==='function'){
         _doViewBranchDashboard(branch);
         setTimeout(()=>{

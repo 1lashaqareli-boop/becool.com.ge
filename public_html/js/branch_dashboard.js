@@ -108,7 +108,14 @@ function switchBdcTab(name,btn){
     if(panel)panel.classList.remove('hidden');
     if(name==='home')    {loadBdcHome();}        /* FIX 3 */
     if(name==='plan')    {/* static */}           /* FIX 4 */
-    if(name==='assets')  {loadBdcAssetsPanel();}  /* FIX 8 */
+    if(name==='assets')  {loadBdcAssetsPanel();
+        /* → asset_view.js ALL გვერდზე გადასვლა */
+        if (typeof loadAssetView === 'function') {
+            window._av = window._av || {};
+            window._av.currentType = 'ALL';
+            loadAssetView(activeBranch);
+        }
+    }  /* FIX 8 */
     if(name==='service') {loadBdcServices();}     /* FIX 5 */
     if(name==='weather') {if(typeof loadBdcWeatherAnalytics==='function')loadBdcWeatherAnalytics();}
 }
@@ -159,7 +166,7 @@ function _bdcMiniList(id,assets){
     const dc={Operational:'#22c55e',Maintenance_Required:'#f59e0b',Down:'#ef4444'};
     el.innerHTML=assets.map(a=>`
         <div class="flex items-center gap-2 py-2 border-b border-slate-50 last:border-0 hover:bg-slate-50 rounded px-1 cursor-pointer"
-             onclick='openBdcAsset(${JSON.stringify(a)})'>
+             onclick='_bdcOpenAsset(${JSON.stringify(a)})'>
             <div class="w-2 h-2 rounded-full flex-shrink-0" style="background:${dc[a.status]||'#94a3b8'}"></div>
             <div class="flex-1 min-w-0">
                 <div class="text-xs font-medium text-slate-900 truncate">${a.name}</div>
