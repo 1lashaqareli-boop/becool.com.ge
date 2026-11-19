@@ -410,7 +410,7 @@ async function loadBranches() {
                 dragging: false,
                 scrollWheelZoom: false
             }).setView([b.lat, b.lng], 15);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(m);
+            L.tileLayer(MAP_TILES, MAP_OPTS).addTo(m);
             L.marker([b.lat, b.lng]).addTo(m);
         }
     });
