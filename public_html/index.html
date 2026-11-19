@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BECOOL CRM | Professional Engineering Hub</title>
     
+       <script src="js/auth.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -21,9 +22,11 @@
 
     <nav class="bg-[#0f172a] p-5 text-white sticky top-0 z-50 border-b-4 border-blue-600 shadow-2xl">
         <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-4 cursor-pointer" onclick="location.reload()">
-                <div class="p-2.5 bg-blue-600 rounded-2xl italic font-black text-2xl shadow-lg transform -rotate-3">BC</div>
-                <h1 class="text-2xl font-black italic tracking-tighter uppercase">BECOOL <span class="text-blue-400 font-normal">CRM</span></h1>
+                       <div class="flex items-center gap-4">
+                <div class="flex items-center gap-4 cursor-pointer" onclick="location.reload()">
+                    <h1 class="text-2xl font-black italic tracking-tighter uppercase">BECOOL <span class="text-blue-400 font-normal">CMMS</span></h1>
+                </div>
+                <button onclick="demoLogout()" class="text-[10px] font-bold uppercase tracking-widest text-slate-400 border border-slate-600 rounded-xl px-3 py-1.5 hover:text-white hover:border-white transition">გასვლა</button>
             </div>
             <div class="flex items-center gap-6 font-bold text-[10px] tracking-widest text-slate-400">
                 <div id="loader" class="hidden flex items-center gap-2 text-blue-400 animate-pulse">
