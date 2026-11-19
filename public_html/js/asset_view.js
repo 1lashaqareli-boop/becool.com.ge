@@ -18,7 +18,7 @@
    გამოიძახება ერთხელ, ინიციალიზაციისას
    ══════════════════════════════════════════════════════════════ */
 function injectAssetViewHTML() {
-    const section = document.getElementById('asset-view');
+        const section = document.getElementById('bdcp-assets');
     if (!section) return;
 
     section.innerHTML = `
@@ -225,7 +225,6 @@ function injectAssetViewCSS() {
     style.id = 'av-styles';
     style.textContent = `
 /* ── Layout ── */
-#asset-view { display:block; }
 .av-layout { display:grid; grid-template-columns:210px 1fr; min-height:calc(100vh - 80px); border:1px solid #e2e8f0; border-radius:1rem; overflow:hidden; background:#fff; }
 
 /* ── Sidebar ── */
@@ -431,6 +430,20 @@ window._av = {
    INIT — გამოიძახება viewAssets(b)-დან
    ══════════════════════════════════════════════════════════════ */
 async function loadAssetView(branch) {
+    // ── აგრეგატები ფილიალის გვერდის ჩანართშია ──
+    const dash  = document.getElementById('branch-dashboard-view');
+    const panel = document.getElementById('bdcp-assets');
+    const sameBranch = window._nav && window._nav.branch && window._nav.branch.id === branch.id;
+    if (!dash.classList.contains('active') || !sameBranch) {
+        viewBranchDashboard(branch);
+    }
+    if (panel.classList.contains('hidden')) {
+        const btn = [...document.querySelectorAll('#bdc-nav .bdc-tab')]
+                    .find(t => t.textContent.includes('აგრეგ'));
+        switchBdcTab('assets', btn);
+        return;
+    }
+
     activeBranch = branch;
     window._av.currentAsset = null;
     window._av.currentType  = null;
@@ -439,10 +452,6 @@ async function loadAssetView(branch) {
     // HTML + CSS ინექცია (პირველ გამოძახებაზე)
     injectAssetViewCSS();
     injectAssetViewHTML();
-
-    // ეკრანის გადართვა
-    document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-    document.getElementById('asset-view').classList.add('active');
 
     // branch სახელი sidebar-ში
     const lbl = document.getElementById('av-branch-label');
