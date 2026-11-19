@@ -25,7 +25,7 @@ function initMap(lat, lng) {
         // Leaflet რუკის ინიციალიზაცია
         modalMap = L.map('modal-map').setView([fLat, fLng], 14);
         // რუკის ვიზუალური სტილის (tile layer) დამატება
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(modalMap);
+        L.tileLayer(MAP_TILES, MAP_OPTS).addTo(modalMap);
         // რუკაზე მარკერის დამატება, რომლის გადაადგილებაც შესაძლებელია
         modalMarker = L.marker([fLat, fLng], { draggable: true }).addTo(modalMap);
 
@@ -61,7 +61,7 @@ async function openLiveMap() {
     setTimeout(() => {
         // ლაივ რუკის ინიციალიზაცია
         liveMap = L.map('live-map-container', { zoomControl: false }).setView([41.7151, 44.8271], 7);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CartoDB' }).addTo(liveMap);
+        L.tileLayer(MAP_TILES, MAP_OPTS).addTo(liveMap);
         L.control.zoom({ position: 'bottomright' }).addTo(liveMap);
 
         // კლასტერების ჯგუფის შექმნა (მარკერების დასაჯგუფებლად)
