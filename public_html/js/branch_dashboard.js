@@ -108,7 +108,7 @@ function switchBdcTab(name,btn){
     if(panel)panel.classList.remove('hidden');
     if(name==='home')    {loadBdcHome();}        /* FIX 3 */
     if(name==='plan')    {/* static */}           /* FIX 4 */
-    if(name==='assets')  {loadBdcAssetsPanel();
+       if(name==='assets')  {
         /* → asset_view.js ALL გვერდზე გადასვლა */
         if (typeof loadAssetView === 'function') {
             window._av = window._av || {};
