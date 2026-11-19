@@ -12,3 +12,6 @@ const SUPABASE_KEY = 'sb_publishable_zcIvAi44jfYTUCx_mQa0uA_e_k55o4m';
 // Supabase კლიენტის შექმნა.
 // ეს ობიექტი (_supabase) გამოიყენება მონაცემთა ბაზასთან ყველა ოპერაციისთვის.
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// --- რუკის ფილები (ერთ ადგილას, ყველა რუკისთვის) ---
+const MAP_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const MAP_OPTS  = { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' };
