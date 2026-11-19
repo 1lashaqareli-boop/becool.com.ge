@@ -38,10 +38,10 @@ function _renderBreadcrumb() {
         if (b) {
             html += `<button onclick="backToCustomer()" class="flex items-center gap-1.5 text-slate-400 hover:text-white transition text-xs font-medium truncate max-w-[150px]">${av}<span class="truncate">${c.name||'---'}</span></button>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-            <span class="flex items-center gap-1.5 text-white font-bold text-xs truncate max-w-[180px]">
+             <button onclick="viewBranchDashboard(window._nav.branch)" class="flex items-center gap-1.5 text-white font-bold text-xs truncate max-w-[180px] hover:text-blue-300 transition">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 <span class="truncate">${b.name||'---'}</span>
-            </span>`;
+            </button>`;
         } else {
             html += `<span class="flex items-center gap-1.5 text-white font-bold text-xs truncate max-w-[200px]">${av}<span class="truncate">${c.name||'---'}</span></span>`;
         }
@@ -229,7 +229,7 @@ async function loadOverviewTab(){
     setTimeout(()=>{
         const md=document.getElementById('overview-map-container');if(!md)return;
         overviewMap=L.map('overview-map-container',{zoomControl:true,attributionControl:false}).setView([41.7151,44.8271],11);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(overviewMap);
+        L.tileLayer(MAP_TILES, MAP_OPTS).addTo(overviewMap);
         if(_overviewBranches.length){
             const mk=[];
             _overviewBranches.forEach(b=>{
@@ -359,7 +359,7 @@ async function loadLiveMapTab(){
     setTimeout(()=>{
         const cont=document.getElementById('live-map-container');if(!cont)return;
         liveMap=L.map('live-map-container',{zoomControl:false}).setView([41.7151,44.8271],7);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'&copy; CartoDB'}).addTo(liveMap);
+        L.tileLayer(MAP_TILES, MAP_OPTS).addTo(liveMap);
         L.control.zoom({position:'bottomright'}).addTo(liveMap);
         const cls=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:50});
         branches.forEach(b=>{
@@ -482,7 +482,7 @@ function _renderBranches(data){
                 </div>
             </div>
         </div>`}).join('');
-    data.forEach((b,i)=>{if(b.lat&&b.lng){try{const m=L.map(`bmap-${i}`,{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false}).setView([b.lat,b.lng],15);L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(m);L.marker([b.lat,b.lng]).addTo(m);}catch(e){}}});
+    data.forEach((b,i)=>{if(b.lat&&b.lng){try{const m=L.map(`bmap-${i}`,{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false}).setView([b.lat,b.lng],15);L.tileLayer(MAP_TILES, MAP_OPTS).addTo(m);L.marker([b.lat,b.lng]).addTo(m);}catch(e){}}});
     lucide.createIcons();
 }
 function _setupBranchRT(){
