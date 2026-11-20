@@ -117,7 +117,14 @@ function injectAssetViewHTML() {
             <div class="av-item" data-type="Fan" onclick="avSelectType(this)">გამწოვი<span class="av-badge" id="badge-Fan">0</span></div>
           </div>
         </div>
-
+        <!-- ენერგია -->
+        <div class="av-sb-section-label">ენერგია</div>
+        <div class="av-cat-wrap">
+          <div class="av-item" data-type="Generator" onclick="avSelectType(this)" style="padding-left:16px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            გენერატორები<span class="av-badge" id="badge-Generator">0</span>
+          </div>
+        </div>
         <!-- სხვა -->
         <div class="av-cat-wrap" style="margin-top:4px">
           <div class="av-item" data-type="Other" onclick="avSelectType(this)" style="padding-left:16px">
@@ -744,7 +751,7 @@ async function _avRenderHome(a) {
     // Supabase-დან სერვ. ლოგები
     const { data: logs } = await _supabase
         .from('service_logs')
-        .select('service_date,service_type,technician_name,job_description,suction_pressure,discharge_pressure,superheat,subcooling,comp_current_a,ambient_temp_c')
+                .select('service_date,service_type,technician_name,job_description,suction_pressure,discharge_pressure,superheat,subcooling,comp_current_a,amp_draw_comp,ambient_temp')
         .eq('asset_id', a.id)
         .order('service_date', { ascending: false })
         .limit(5);
@@ -796,7 +803,7 @@ async function _avRenderHome(a) {
           <div class="av-meas ${lastMeas.suction_pressure<10?'g':'y'}"><div class="av-meas-l">LP</div><div class="av-meas-v">${lastMeas.suction_pressure||'—'}<span class="av-meas-u">Bar</span></div></div>
           <div class="av-meas ${lastMeas.discharge_pressure<30?'g':'y'}"><div class="av-meas-l">HP</div><div class="av-meas-v">${lastMeas.discharge_pressure||'—'}<span class="av-meas-u">Bar</span></div></div>
           <div class="av-meas ${lastMeas.superheat>=4&&lastMeas.superheat<=8?'g':'y'}"><div class="av-meas-l">SH</div><div class="av-meas-v">${lastMeas.superheat||'—'}<span class="av-meas-u">K</span></div></div>
-          <div class="av-meas g"><div class="av-meas-l">კომპ. A</div><div class="av-meas-v">${lastMeas.comp_current_a||'—'}<span class="av-meas-u">A</span></div></div>
+          <div class="av-meas g"><div class="av-meas-l">კომპ. A</div><div class="av-meas-v">${lastMeas.amp_draw_comp||lastMeas.comp_current_a||'—'}<span class="av-meas-u">A</span></div></div>
         </div>
         <div style="font-size:10px;color:#94a3b8;margin-top:6px">${new Date(lastMeas.service_date).toLocaleDateString('ka-GE')} · ${lastMeas.technician_name||''}</div>
         ` : '<div class="av-empty">გაზომვები არ არის</div>'}
@@ -827,24 +834,35 @@ async function _avRenderSvc() {
         .eq('asset_id', window._av.currentAsset.id)
         .order('service_date', { ascending: false });
 
+    window._av.svcLogs = logs || [];   /* რედ./PDF ღილაკებისთვის */
     const typeClass = { PPM:'av-ppm', Corrective:'av-cor', Emergency:'av-emr', Installation:'av-inst' };
+    const pdfBtn = 'font-size:9px;font-weight:700;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:2px 6px;background:#fff;cursor:pointer';
 
     tc.innerHTML = `
     <div class="av-tcard">
       <div class="av-tcard-h">სერვისის სრული ისტორია <span class="av-tcard-ha" onclick="avAddService()">+ სერვისი</span></div>
-      <div class="av-log-head"><div>თარიღი</div><div>სამუშაო</div><div>ტექნ.</div><div>ტიპი</div><div style="text-align:right">₾</div></div>
-      ${(logs || []).map(l => `
-        <div class="av-log-row">
+      <div class="av-log-head"><div>თარიღი</div><div>სამუშაო</div><div>ტექნ.</div><div>ტიპი</div><div style="text-align:right">PDF</div></div>
+      ${window._av.svcLogs.map((l, i) => `
+        <div class="av-log-row" style="cursor:pointer" onclick="_avSvcEdit(${i})">
           <span class="av-log-date">${new Date(l.service_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>
           <span style="color:#0f172a">${l.job_description || '—'}</span>
           <span class="av-log-tech">${l.technician_name || '—'}</span>
           <span class="av-pill ${typeClass[l.service_type]||'av-cor'}">${l.service_type||'—'}</span>
-          <span class="av-log-cost">—</span>
+          <span style="text-align:right"><button style="${pdfBtn}" onclick="event.stopPropagation();_avSvcPdf(${i})">PDF</button></span>
         </div>
       `).join('') || '<div class="av-empty">სერვ. ჩანაწ. არ არის</div>'}
     </div>`;
 }
 
+/* სერვისის სტრიქონი → რედაქტირება / PDF */
+function _avSvcEdit(i) {
+    const l = window._av.svcLogs?.[i];
+    if (l) editServiceLog({ ...l, _assetName: window._av.currentAsset?.name });
+}
+function _avSvcPdf(i) {
+    const l = window._av.svcLogs?.[i];
+    if (l) exportServicePDF({ ...l, _assetName: window._av.currentAsset?.name, _branchName: activeBranch?.name });
+}
 
 /* ══════════════════════════════════════════════════════════════
    STATUS TAB
@@ -923,11 +941,8 @@ function _avRenderLib() {
    ACTIONS
    ══════════════════════════════════════════════════════════════ */
 function avOpenNewAsset() {
-    if (window._av.currentType) {
-        openAssetModal({ asset_type: window._av.currentType });
-    } else {
-        openAssetModal();
-    }
+    const t = window._av.currentType;
+    openAssetModal(t && t !== 'ALL' ? { asset_type: t } : null);
 }
 
 function avEditAsset() {
