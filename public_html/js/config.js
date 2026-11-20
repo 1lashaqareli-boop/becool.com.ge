@@ -15,3 +15,5 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // --- რუკის ფილები (ერთ ადგილას, ყველა რუკისთვის) ---
 const MAP_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const MAP_OPTS  = { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' };
+// --- OpenWeather (ამინდი) ---
+const OPENWEATHER_KEY = 'fdbd9c7e5e5528e3aab0e432a2a165a7';
