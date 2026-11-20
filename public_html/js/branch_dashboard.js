@@ -7,7 +7,7 @@
    FIX 8: assets tab — left sidebar + right cards (asset_view.js-ის მსგავსი)
    ============================================================ */
 
-const OPENWEATHER_KEY = 'a155a131748709196243b52b5bf35b53';
+
 let bdcOpen = true;
 
 function _doViewBranchDashboard(b){
@@ -118,6 +118,7 @@ function switchBdcTab(name,btn){
     }  /* FIX 8 */
     if(name==='service') {loadBdcServices();}     /* FIX 5 */
     if(name==='weather') {if(typeof loadBdcWeatherAnalytics==='function')loadBdcWeatherAnalytics();}
+    if(name==='iot')     {if(typeof loadBdcIot==='function')loadBdcIot();}
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -410,12 +411,7 @@ async function loadBdcServices(){
 
 /* FIX 5 — სერვ. სტრიქონი → detail */
 async function _openSvcRow(s){
-    const {data:as}=await _supabase.from('assets').select('*').eq('id',s.asset_id).single().catch(()=>({data:null}));
-    activeAsset=as||{id:s.asset_id,name:s._assetName||'სერვ.'};
-    document.querySelectorAll('.view-section').forEach(v=>v.classList.remove('active'));
-    document.getElementById('service-logs-view').classList.add('active');
-    document.getElementById('service-view-title').innerText=activeAsset.name||'სერვ.';
-    loadServiceLogs();
+    editServiceLog(s);
 }
 
 function openBdcAsset(a){
