@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BECOOL CRM | Professional Engineering Hub</title>
     
-       <script src="js/auth.js"></script>
+       <script src="js/auth.js?v=20261119e"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -15,7 +15,7 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20261119e">
 
 </head>
 <body class="bg-[#f1f5f9] text-slate-900">
@@ -536,7 +536,8 @@
       სერვისები
     </button>
 
-    <button class="bdc-tab flex items-center gap-1.5 px-4 py-3 border-b-2 border-transparent text-slate-200 font-medium text-xs whitespace-nowrap flex-shrink-0 cursor-not-allowed">
+        <button onclick="switchBdcTab('iot',this)"
+      class="bdc-tab flex items-center gap-1.5 px-4 py-3 border-b-2 border-transparent text-slate-400 hover:text-slate-700 font-medium text-xs whitespace-nowrap flex-shrink-0 transition">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       IoT/BMS
     </button>
@@ -1293,6 +1294,9 @@
                         <option value="Blast Chiller">Blast Chiller</option>
                         <option value="Condensing Unit">Condensing Unit</option>
                     </optgroup>
+                    <optgroup label="⚡ ენერგია">
+                        <option value="Generator">გენერატორი</option>
+                    </optgroup>
                     <optgroup label="🔥 სხვა">
                         <option value="Boiler">Boiler</option>
                         <option value="DHW">DHW</option>
@@ -1310,7 +1314,8 @@
                 <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">კატეგორია (CATEGORY)</label>
                 <select id="a-category" class="input-card">
                     <option value="AC">AC</option>
-                    <option value="Refrigeration">Refrigeration</option>
+                    <option value="Refrigeration">Refrigeration</optio>
+                    <option value="Energy">Energy</option>
                     <option value="Other">Other</option>
                 </select>
             </div>
@@ -1424,15 +1429,16 @@
         </div>
     </div>
 
-<script src="js/config.js"></script>
-<script src="js/maps.js"></script>
-<script src="js/api.js"></script>
-<script src="js/branch_ui.js"></script>
-<script src="js/branch_dashboard.js"></script>
-<script src="js/asset_view.js"></script>
-<script src="js/live_status.js"></script>
-<script src="js/weather_analytics.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/app.js"></script>
+<script src="js/config.js?v=20261119e"></script>
+<script src="js/maps.js?v=20261119e"></script>
+<script src="js/api.js?v=20261119e"></script>
+<script src="js/branch_ui.js?v=20261119e"></script>
+<script src="js/branch_dashboard.js?v=20261119e"></script>
+<script src="js/iot_bms.js?v=20261119e"></script>
+<script src="js/asset_view.js?v=20261119e"></script>
+<script src="js/live_status.js?v=20261119e"></script>
+<script src="js/weather_analytics.js?v=20261119e"></script>
+<script src="js/ui.js?v=20261119e"></script>
+<script src="js/app.js?v=20261119e"></script>
 </body>
 </html>
