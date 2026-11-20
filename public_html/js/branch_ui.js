@@ -579,12 +579,7 @@ async function _openAssetFromTable(a){
 }
 function viewAssetFromTable(a){_openAssetFromTable(a);}
 function viewServiceFromTable(log){
-    activeBranch={id:log.branch_id,name:log._branchName||''};
-    activeAsset ={id:log.asset_id, name:log._assetName||'სერვ.'};
-    document.querySelectorAll('.view-section').forEach(s=>s.classList.remove('active'));
-    document.getElementById('service-logs-view').classList.add('active');
-    document.getElementById('service-view-title').innerText=activeAsset.name;
-    loadServiceLogs();
+    editServiceLog(log);
 }
 
 /* FIX 7: export all assets Excel */
@@ -665,8 +660,13 @@ async function loadAllServices(){
 /* ══════════════════════════════════════════════════════════════
    FIX 6+7: PDF EXPORT ფუნქციები
    ══════════════════════════════════════════════════════════════ */
-function exportServicePDF(log){
+async function exportServicePDF(log){
     const w=window.open('','_blank');
+    /* სრული ჩანაწერი ბაზიდან — ცხრილები ზოგჯერ ველების მხოლოდ ნაწილს ტვირთავენ */
+    if(log?.id){
+        const {data:full}=await _supabase.from('service_logs').select('*').eq('id',log.id).maybeSingle();
+        if(full) log={...full,_assetName:log._assetName,_branchName:log._branchName};
+    }
     const date=new Date(log.service_date).toLocaleDateString('ka-GE',{day:'2-digit',month:'long',year:'numeric'});
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
     <style>body{font-family:Arial,sans-serif;padding:30px;color:#1a1a1a;max-width:800px;margin:0 auto}
