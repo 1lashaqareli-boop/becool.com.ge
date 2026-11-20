@@ -12,7 +12,7 @@
 
 let _wChart = null;
 let _fChart = null;
-const _OWK  = 'a155a131748709196243b52b5bf35b53';
+const _OWK  = OPENWEATHER_KEY;
 window._waPeriod = 30;
 window._waSummaryView = 'daily';
 
